@@ -21,6 +21,13 @@ if ! [ -d llvm-src ]; then
   git -C llvm-src fetch --depth 1 "$LLVM_REPO" "$LLVM_COMMIT"
   git -C llvm-src checkout -q FETCH_HEAD
 fi
+# Ergänzung zum WASI-Patch: Stack-Ausgabe bei Absturz gibt es ohne Signale nicht; leere Funktion,
+# sonst fehlt sie beim Linken von llvm.wasm (wird von clang direkt aufgerufen)
+SIG=llvm-src/llvm/lib/Support/Signals.cpp
+if ! grep -q "bool DisableCrashReporting) {}" $SIG; then
+  sed -i 's|^void llvm::sys::DisableSystemDialogsOnCrash() {}$|&\nvoid llvm::sys::PrintStackTraceOnErrorSignal(StringRef Argv0, bool DisableCrashReporting) {}|' $SIG
+fi
+grep -q "bool DisableCrashReporting) {}" $SIG
 if ! [ -d ${WASI_SDK} ]; then curl -fL ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 WASI_TARGET="wasm32-wasip1"
@@ -65,6 +72,7 @@ fi
 
 # 2. LLVM als WebAssembly: nur AVR, nur die Werkzeuge, die die IDE braucht
 cmake -G Ninja -B llvm-build -S llvm-src/llvm \
+  -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
   -DCMAKE_TOOLCHAIN_FILE=../Toolchain-WASI.cmake \
   -DLLVM_NATIVE_TOOL_DIR=$(pwd)/llvm-tblgen-build/bin \
   -DCMAKE_BUILD_TYPE=MinSizeRel \
