@@ -7,14 +7,19 @@
 #   llvm.wasm          ein Programm für clang, ld.lld, llvm-objcopy, llvm-size, llvm-nm, llvm-ar
 #   clang-include.tar  Header, die clang selbst mitbringt (stddef.h, stdarg.h …)
 
-LLVM_TAG=${LLVM_TAG:-llvmorg-23.1.5}
+# LLVM 22.1.0 mit dem WASI-Patch von YoWASP ("Conditionalize use of POSIX features missing on
+# WASI/WebAssembly"); das unveränderte LLVM lässt sich nicht für WASI einrichten.
+LLVM_REPO=https://github.com/YoWASP/llvm-project.git
+LLVM_COMMIT=97196c8eeb1d495fa43bb8af2fb26af5ef5b89fb
 WASI_VER=34
 WASI_SDK=wasi-sdk-${WASI_VER}.0-x86_64-linux
 WASI_SDK_URL=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VER}/${WASI_SDK}.tar.gz
 JOBS=${JOBS:-$(nproc)}
 
 if ! [ -d llvm-src ]; then
-  git clone --depth 1 --branch "$LLVM_TAG" https://github.com/llvm/llvm-project.git llvm-src
+  git init -q llvm-src
+  git -C llvm-src fetch --depth 1 "$LLVM_REPO" "$LLVM_COMMIT"
+  git -C llvm-src checkout -q FETCH_HEAD
 fi
 if ! [ -d ${WASI_SDK} ]; then curl -fL ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
@@ -81,7 +86,7 @@ cmake -G Ninja -B llvm-build -S llvm-src/llvm \
   -DLLVM_TOOL_LLVM_CXXFILT_BUILD=OFF -DLLVM_TOOL_LLC_BUILD=OFF -DLLVM_TOOL_OPT_BUILD=OFF \
   -DLLVM_TOOL_LLI_BUILD=OFF -DLLVM_TOOL_LTO_BUILD=OFF -DLLVM_TOOL_GOLD_BUILD=OFF \
   -DLLVM_TOOL_BUGPOINT_BUILD=OFF -DLLVM_TOOL_DSYMUTIL_BUILD=OFF \
-  -DCLANG_ENABLE_ARCMT=OFF -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+  -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
   -DCLANG_INCLUDE_TESTS=OFF -DCLANG_BUILD_TOOLS=OFF -DCLANG_BUILD_EXAMPLES=OFF -DCLANG_INCLUDE_DOCS=OFF \
   -DCLANG_TOOL_CLANG_SCAN_DEPS_BUILD=OFF -DCLANG_TOOL_CLANG_INSTALLAPI_BUILD=OFF \
   -DLLD_BUILD_TOOLS=OFF \

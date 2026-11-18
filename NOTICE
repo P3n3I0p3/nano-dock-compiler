@@ -2,7 +2,8 @@ nano-dock-compiler
 Baut LLVM (clang, lld) mit AVR-Unterstützung als WebAssembly für das iPad Nano Dock.
 
 build.sh beruht auf dem Bauskript von YoWASP/clang (https://github.com/YoWASP/clang),
-Apache License 2.0. Geändert: nur AVR-Ziel, nur clang/lld/objcopy/size/nm/ar, ohne
+Apache License 2.0. LLVM-Quelle: YoWASP/llvm-project (LLVM 22.1.0 mit WASI-Patch).
+Geändert: nur AVR-Ziel, nur clang/lld/objcopy/size/nm/ar, ohne
 WebAssembly-Laufzeitbibliotheken.
 
 Das gebaute llvm.wasm enthält LLVM (https://llvm.org), Apache License 2.0 with LLVM Exceptions.

@@ -18,7 +18,7 @@ Programm (`llvm.wasm`). Das hält die Datei klein.
 
 Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem eigenen Computer:
 
-1. **build:** LLVM 23 mit [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) nach WebAssembly
+1. **build:** LLVM 22.1 (mit dem WASI-Patch von YoWASP) mit [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) nach WebAssembly
    übersetzen (dauert einige Stunden). Ergebnis: `llvm.wasm` und `clang-include.tar`.
 2. **test:** Mit [wasmtime](https://wasmtime.dev) werden drei Sketches komplett mit dem
    WebAssembly-Compiler übersetzt: der Arduino-Core (1.8.8), Blink ohne Core, Blink mit Core und
