@@ -29,12 +29,18 @@ Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem
 
 ## Anpassungen an LLVM für WebAssembly
 
-Zusätzlich zum WASI-Patch von YoWASP ändert `build.sh` zwei Kleinigkeiten im Quelltext:
+Zusätzlich zum WASI-Patch von YoWASP ändert `build.sh` drei Kleinigkeiten im Quelltext:
 
 - `PrintStackTraceOnErrorSignal` als leere Funktion: Ohne Signale gibt es keine Absturz-Ausgabe,
   clang ruft die Funktion aber auf.
 - `setPermissions` gibt unter WASI sofort Erfolg zurück: Dateirechte gibt es dort nicht, und
   `llvm-objcopy` würde sonst nach dem Schreiben mit „Function not implemented“ abbrechen.
+- `SafelyCloseFileDescriptor` meldet nur noch echte Fehler: Der WASI-Patch gab nach `close()` immer
+  den letzten `errno`-Wert zurück, wodurch clang bei manchen Dateien mit „IO failure on output
+  stream“ abbrach.
+
+clang braucht außerdem einen Ordner `/tmp` für Zwischendateien (z. B. bei Assembler-Dateien `.S`);
+der Test stellt ihn bereit, die IDE muss das im virtuellen Dateisystem ebenso tun.
 
 Damit spätere Läufe schneller sind, speichert GitHub Actions die übersetzten Dateien mit `ccache`.
 

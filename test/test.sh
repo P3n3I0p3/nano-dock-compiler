@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 DIST=$(cd ../dist && pwd)
 W=work
-mkdir -p $W/clang $W/libs $W/out
+mkdir -p $W/clang $W/libs $W/out $W/tmp
 tar -C $W/clang -xf "$DIST/clang-include.tar"
 
 AVR=/usr/lib/avr                                       # avr-libc (Debian/Ubuntu-Paket)

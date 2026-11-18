@@ -35,6 +35,11 @@ if ! grep -q "nano-dock: keine Dateirechte" $PATHINC; then
   perl -0pi -e 's/(std::error_code setPermissions\((?:const Twine &Path|int FD), perms Permissions\) \{\n)/$1#if defined(__wasi__) \/\/ nano-dock: keine Dateirechte unter WASI\n  return std::error_code();\n#endif\n/g' $PATHINC
 fi
 [ "$(grep -c "nano-dock: keine Dateirechte" $PATHINC)" = 2 ]
+# Fehler im WASI-Patch: SafelyCloseFileDescriptor gab den alten errno-Wert zurück, auch wenn close()
+# geklappt hat ("IO failure on output stream: Invalid argument" bei manchen Dateien). Nur bei Fehler melden.
+PROCINC=llvm-src/llvm/lib/Support/Unix/Process.inc
+perl -0pi -e 's/  ::close\(FD\);\n  return errnoAsErrorCode\(\);/  if (::close(FD) < 0) \/\/ nano-dock: nur echte Fehler\n    return errnoAsErrorCode();\n  return std::error_code();/' $PROCINC
+grep -q "nano-dock: nur echte Fehler" $PROCINC
 if ! [ -d ${WASI_SDK} ]; then curl -fL ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 WASI_TARGET="wasm32-wasip1"
