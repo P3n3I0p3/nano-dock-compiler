@@ -11,7 +11,7 @@
 # WASI/WebAssembly"); das unveränderte LLVM lässt sich nicht für WASI einrichten.
 LLVM_REPO=https://github.com/YoWASP/llvm-project.git
 LLVM_COMMIT=97196c8eeb1d495fa43bb8af2fb26af5ef5b89fb
-WASI_VER=34
+WASI_VER=29                 # dieselbe Version wie YoWASP
 WASI_SDK=wasi-sdk-${WASI_VER}.0-x86_64-linux
 WASI_SDK_URL=https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VER}/${WASI_SDK}.tar.gz
 JOBS=${JOBS:-$(nproc)}
@@ -27,7 +27,8 @@ WASI_TARGET="wasm32-wasip1"
 
 # Einstellungen wie bei YoWASP: LLVM ruft (in dieser Konfiguration nie erreichtes) mmap auf,
 # braucht viel Speicher und Stack; LTO entfernt ungenutzte Thread-Funktionen.
-CFLAGS="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot -mcpu=lime1 -D_WASI_EMULATED_MMAN -flto"
+# -include stdlib.h: einige LLVM-Dateien nutzen abort(), ohne stdlib.h einzubinden
+CFLAGS="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot -mcpu=lime1 -D_WASI_EMULATED_MMAN -include stdlib.h -flto"
 LDFLAGS="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot -lwasi-emulated-mman -Wl,--max-memory=4294967296"
 LDFLAGS="${LDFLAGS} -Wl,-z,stack-size=8388608,--stack-first -flto -Wl,--strip-all"
 
