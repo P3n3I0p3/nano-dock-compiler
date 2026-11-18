@@ -1,0 +1,7 @@
+llvm-src/
+wasi-sdk-*/
+llvm-tblgen-build/
+llvm-build/
+dist/
+test/work/
+.DS_Store

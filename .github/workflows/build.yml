@@ -1,0 +1,79 @@
+name: Compiler bauen und testen
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # nur für Releases bei Tags
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Werkzeuge
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake ninja-build
+
+      - name: LLVM mit AVR als WebAssembly bauen
+        run: ./build.sh
+
+      - name: Größe
+        run: |
+          gzip -9 -k dist/llvm.wasm
+          ls -la dist
+          echo "### Größe" >> "$GITHUB_STEP_SUMMARY"
+          echo "llvm.wasm: $(du -h dist/llvm.wasm | cut -f1), gepackt: $(du -h dist/llvm.wasm.gz | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nano-dock-compiler
+          path: dist/
+
+  test:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: nano-dock-compiler
+          path: dist
+
+      - name: avr-libc, libgcc und wasmtime
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq avr-libc gcc-avr
+          curl -fsSL https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.1/wasmtime-v50.0.1-x86_64-linux.tar.xz | tar xJf -
+          echo "$PWD/wasmtime-v50.0.1-x86_64-linux" >> "$GITHUB_PATH"
+
+      - name: Arduino-Core
+        run: git clone --depth 1 --branch 1.8.8 https://github.com/arduino/ArduinoCore-avr.git test/work/core
+
+      - name: Sketches mit dem WebAssembly-Compiler übersetzen
+        run: |
+          test/test.sh
+          cat test/work/out/bericht.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-ergebnisse
+          path: test/work/out/
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nano-dock-compiler
+          path: dist
+      - name: Release mit llvm.wasm
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --notes "LLVM mit AVR als WebAssembly, getestet mit den Nano-Sketches."
