@@ -39,14 +39,10 @@ ms() { python3 -c 'import time; print(int(time.time()*1000))'; }
 REPORT=$W/out/bericht.md
 { echo "| Schritt | Dauer |"; echo "|---|---|"; } > $REPORT
 
-# llvm-objcopy schreibt hier immer auf die Standardausgabe ("-"): Beim Schreiben in eine Datei
-# übernimmt es die Dateirechte (fchmod), und das gibt es unter WASI nicht ("Function not implemented").
-
 # Bibliotheken ohne Debug-Infos (lld kennt deren Relocations nicht) – mit dem Wasm-objcopy
 for f in "$LIBGCC/libgcc.a" "$AVR/lib/avr5/libc.a" "$AVR/lib/avr5/libm.a" "$AVR/lib/avr5/libatmega328p.a" "$AVR/lib/avr5/crtatmega328p.o"; do
-  cp "$f" $W/libs/src_$(basename "$f")
-  run llvm-objcopy --strip-debug "/w/$W/libs/src_$(basename "$f")" - > "$W/libs/$(basename "$f")"
-  rm "$W/libs/src_$(basename "$f")"
+  cp "$f" $W/libs/
+  run llvm-objcopy --strip-debug "/w/$W/libs/$(basename "$f")"
 done
 
 # Arduino-Core einmal übersetzen (im Produkt wird er vorab mitgeliefert)
@@ -66,7 +62,7 @@ link() {      # $1 Name, weitere: Objektdateien
   run ld.lld --gc-sections -T /w/avr5_lld.ld -u __do_copy_data -u __do_clear_bss -u __do_global_ctors \
     /w/$W/libs/crtatmega328p.o "$@" -L/w/$W/libs --start-group -lgcc -lm -lc -latmega328p --end-group \
     -o /w/$W/out/$name.elf
-  run llvm-objcopy -O ihex -R .eeprom /w/$W/out/$name.elf - > $W/out/$name.hex
+  run llvm-objcopy -O ihex -R .eeprom /w/$W/out/$name.elf /w/$W/out/$name.hex
   run llvm-size -A /w/$W/out/$name.elf > $W/out/$name.size
 }
 

@@ -27,6 +27,17 @@ Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem
    Schritts steht in der Zusammenfassung des Laufs.
 3. **release** (bei Tags `v*`): `llvm.wasm` als Download.
 
+## Anpassungen an LLVM für WebAssembly
+
+Zusätzlich zum WASI-Patch von YoWASP ändert `build.sh` zwei Kleinigkeiten im Quelltext:
+
+- `PrintStackTraceOnErrorSignal` als leere Funktion: Ohne Signale gibt es keine Absturz-Ausgabe,
+  clang ruft die Funktion aber auf.
+- `setPermissions` gibt unter WASI sofort Erfolg zurück: Dateirechte gibt es dort nicht, und
+  `llvm-objcopy` würde sonst nach dem Schreiben mit „Function not implemented“ abbrechen.
+
+Damit spätere Läufe schneller sind, speichert GitHub Actions die übersetzten Dateien mit `ccache`.
+
 ## Einstellungen für AVR
 
 Die nötigen Compiler-Optionen stammen aus einem Machbarkeitstest mit clang am Mac:

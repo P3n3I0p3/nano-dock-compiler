@@ -28,6 +28,13 @@ if ! grep -q "bool DisableCrashReporting) {}" $SIG; then
   sed -i 's|^void llvm::sys::DisableSystemDialogsOnCrash() {}$|&\nvoid llvm::sys::PrintStackTraceOnErrorSignal(StringRef Argv0, bool DisableCrashReporting) {}|' $SIG
 fi
 grep -q "bool DisableCrashReporting) {}" $SIG
+# Dateirechte (chmod/fchmod) gibt es unter WASI nicht; llvm-objcopy und andere setzen sie nach dem
+# Schreiben und brächen sonst mit "Function not implemented" ab. Unter WASI: einfach erfolgreich.
+PATHINC=llvm-src/llvm/lib/Support/Unix/Path.inc
+if ! grep -q "nano-dock: keine Dateirechte" $PATHINC; then
+  perl -0pi -e 's/(std::error_code setPermissions\((?:const Twine &Path|int FD), perms Permissions\) \{\n)/$1#if defined(__wasi__) \/\/ nano-dock: keine Dateirechte unter WASI\n  return std::error_code();\n#endif\n/g' $PATHINC
+fi
+[ "$(grep -c "nano-dock: keine Dateirechte" $PATHINC)" = 2 ]
 if ! [ -d ${WASI_SDK} ]; then curl -fL ${WASI_SDK_URL} | tar xzf -; fi
 WASI_SDK_PATH=$(pwd)/${WASI_SDK}
 WASI_TARGET="wasm32-wasip1"
