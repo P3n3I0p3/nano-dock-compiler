@@ -44,7 +44,9 @@ WASI_TARGET="wasm32-wasip1"
 # -include stdlib.h: einige LLVM-Dateien nutzen abort(), ohne stdlib.h einzubinden
 CFLAGS="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot -mcpu=lime1 -D_WASI_EMULATED_MMAN -include stdlib.h -flto"
 LDFLAGS="--sysroot ${WASI_SDK_PATH}/share/wasi-sysroot -lwasi-emulated-mman -Wl,--max-memory=4294967296"
-LDFLAGS="${LDFLAGS} -Wl,-z,stack-size=8388608,--stack-first -flto -Wl,--strip-all"
+# Vorerst ohne --strip-all: Funktionsnamen bleiben drin, damit Fehlermeldungen lesbar sind
+# (macht die Datei größer; für die fertige IDE wieder entfernen)
+LDFLAGS="${LDFLAGS} -Wl,-z,stack-size=8388608,--stack-first -flto -Wl,--strip-debug"
 
 cat >Toolchain-WASI.cmake <<END
 set(CMAKE_SYSTEM_NAME WASI)

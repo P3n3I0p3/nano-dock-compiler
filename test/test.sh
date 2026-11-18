@@ -17,6 +17,7 @@ VARIANT=$W/core/variants/eightanaloginputs
 
 # Alles, was der Compiler sieht, liegt in einem virtuellen Dateisystem, wie im Browser:
 #   /avr = avr-libc, /clang = clang-Header, /core = Arduino-Core, /w = Arbeitsordner
+export WASMTIME_BACKTRACE_DETAILS=1
 run() {
   wasmtime run -W max-wasm-stack=4194304 --dir "$AVR::/avr" --dir "$W/clang::/clang" --dir "$W/core::/core" --dir "$(pwd)::/w" \
     "$DIST/llvm.wasm" "$@"
@@ -47,13 +48,21 @@ done
 
 # Arduino-Core einmal übersetzen (im Produkt wird er vorab mitgeliefert)
 t0=$(ms)
-objs=()
+objs=(); failed=()
 for src in "$CORE"/*.c "$CORE"/*.cpp "$CORE"/*.S; do
   [ -e "$src" ] || continue
   name=$(basename "$src")
-  compile "/core/cores/arduino/$name" "/w/$W/out/core_$name.o"
-  objs+=("/w/$W/out/core_$name.o")
+  # bei einem Fehler weitermachen, damit man sieht, welche Dateien betroffen sind
+  if compile "/core/cores/arduino/$name" "/w/$W/out/core_$name.o" 2> $W/out/core_$name.err; then
+    objs+=("/w/$W/out/core_$name.o")
+  else
+    failed+=("$name"); echo "FEHLER bei $name:"; head -30 $W/out/core_$name.err
+  fi
 done
+if [ ${#failed[@]} -gt 0 ]; then
+  echo "| Arduino-Core: Fehler bei ${failed[*]} | |" >> $REPORT
+  cat $REPORT; exit 1
+fi
 run llvm-ar rcs /w/$W/out/libcore.a "${objs[@]}"
 echo "| Arduino-Core (${#objs[@]} Dateien) | $(( $(ms) - t0 )) ms |" >> $REPORT
 
