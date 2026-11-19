@@ -16,10 +16,11 @@ CORE=$W/core/cores/arduino
 VARIANT=$W/core/variants/eightanaloginputs
 
 # Alles, was der Compiler sieht, liegt in einem virtuellen Dateisystem, wie im Browser:
-#   /avr = avr-libc, /clang = clang-Header, /core = Arduino-Core, /w = Arbeitsordner
+#   /avr = avr-libc, /clang = clang-Header, /core = Arduino-Core, /w = Arbeitsordner,
+#   /tmp = Zwischendateien (clang braucht sie z. B. für Assembler-Dateien .S)
 export WASMTIME_BACKTRACE_DETAILS=1
 run() {
-  wasmtime run -W max-wasm-stack=4194304 --dir "$AVR::/avr" --dir "$W/clang::/clang" --dir "$W/core::/core" --dir "$(pwd)::/w" \
+  wasmtime run -W max-wasm-stack=4194304 --env TMPDIR=/tmp --dir "$W/tmp::/tmp" --dir "$AVR::/avr" --dir "$W/clang::/clang" --dir "$W/core::/core" --dir "$(pwd)::/w" \
     "$DIST/llvm.wasm" "$@"
 }
 
