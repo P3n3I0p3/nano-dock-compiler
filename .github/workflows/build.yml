@@ -72,6 +72,9 @@ jobs:
       - name: Arduino-Core
         run: git clone --depth 1 --branch 1.8.8 https://github.com/arduino/ArduinoCore-avr.git test/work/core
 
+      - name: Arduino-Bibliotheken holen (feste Versionen, test/libraries.txt)
+        run: test/libraries.sh
+
       - name: Sketches mit dem WebAssembly-Compiler übersetzen
         run: |
           test/test.sh

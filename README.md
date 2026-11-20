@@ -29,9 +29,10 @@ Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem
 
 1. **build:** LLVM 22.1 (mit dem WASI-Patch von YoWASP) mit [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) nach WebAssembly
    übersetzen (dauert einige Stunden). Ergebnis: `llvm.wasm` und `clang-include.tar`.
-2. **test:** Mit [wasmtime](https://wasmtime.dev) werden drei Sketches komplett mit dem
+2. **test:** `test/libraries.sh` holt die Arduino-Bibliotheken in festen Versionen ([Liste](test/libraries.txt)).
+   Mit [wasmtime](https://wasmtime.dev) werden drei Sketches komplett mit dem
    WebAssembly-Compiler übersetzt: der Arduino-Core (1.8.8), Blink ohne Core, Blink mit Core und
-   ein Sketch mit `Serial`, `millis` und `float`. Geprüft wird, dass eine HEX-Datei entsteht,
+   ein Sketch mit `Serial`, `millis` und `float`. Dazu werden alle Bibliotheken übersetzt. Geprüft wird, dass eine HEX-Datei entsteht,
    die Startroutinen enthalten sind und die Pin-Tabellen im Flash liegen. Die Dauer jedes
    Schritts steht in der Zusammenfassung des Laufs.
 3. **IDE:** `web/package.sh` stellt den Ordner `ide/` zusammen (Compiler, Arduino-Dateien, Seite),

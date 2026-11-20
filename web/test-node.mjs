@@ -2,8 +2,11 @@
 // derselbe Code wie im Browser (wasi.js, compiler-core.js), dieselben Dateien wie in der IDE.
 //   node web/test-node.mjs <ide-Ordner> <Sketch-Ordner> <Ordner mit HEX-Dateien aus test.sh>
 // Die HEX-Dateien müssen Byte für Byte gleich sein wie die aus dem wasmtime-Test.
+// Außerdem müssen alle Beispiele der IDE, die Workshop-Sketches (test/workshop) und je ein Sketch
+// pro Bibliothek (test/bibliotheken) fehlerfrei übersetzt werden.
 import { readFileSync, readdirSync, appendFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Compiler, gunzip } from "./compiler-core.js";
 
 const [ideDir, sketchDir, hexDir] = process.argv.slice(2);
@@ -31,14 +34,34 @@ for (const name of readdirSync(sketchDir)) {
   check(name, same, `${r.flash} Bytes Flash, ${r.ram} Bytes RAM, ${r.ms} ms, ${same ? "HEX identisch mit wasmtime" : "HEX weicht ab"}`);
 }
 
-// 2. Funktion vor ihrer Definition benutzen (braucht die automatischen Prototypen)
+// 2. Beispiele der IDE (aus index.html), Workshop- und Bibliotheks-Sketches: fehlerfrei übersetzen
+const here = dirname(fileURLToPath(import.meta.url));
+const sketches = [];
+const html = readFileSync(join(here, "index.html"), "utf8");
+const block = html.slice(html.indexOf("const EXAMPLES = {"));
+for (const m of block.slice(0, block.indexOf("\n};")).matchAll(/^  "([^"]+)": `([\s\S]*?)`,?$/gm)) {
+  sketches.push(["Beispiel: " + m[1], m[2].replace(/\$\{IDE_NAME\}/g, "Bitbruecke IDE")]);
+}
+for (const [dir, label] of [["workshop", "Workshop"], ["bibliotheken", "Bibliothek"]]) {
+  const path = join(here, "..", "test", dir);
+  for (const f of readdirSync(path).filter((f) => f.endsWith(".ino")).sort()) {
+    sketches.push([`${label}: ${f}`, readFileSync(join(path, f), "utf8")]);
+  }
+}
+for (const [name, code] of sketches) {
+  const r = await compiler.compile(code);
+  if (!r.ok) console.log(name + "\n" + r.log);
+  check(name, r.ok, r.ok ? `${r.flash} Bytes Flash, ${r.ram} Bytes RAM, ${r.ms} ms` : "Fehler:<br>" + r.log.replace(/\n/g, "<br>"));
+}
+
+// 3. Funktion vor ihrer Definition benutzen (braucht die automatischen Prototypen)
 let r = await compiler.compile(`void setup() { pinMode(13, OUTPUT); }
 void loop() { blinken(3); }
 void blinken(int n) { while (n--) { digitalWrite(13, HIGH); delay(100); digitalWrite(13, LOW); delay(100); } }
 `);
 check("Prototypen", r.ok, r.ok ? "Funktion vor der Definition benutzbar" : r.log);
 
-// 3. Fehler im Sketch: Meldung mit der richtigen Zeile, wie die IDE sie zum Springen braucht
+// 4. Fehler im Sketch: Meldung mit der richtigen Zeile, wie die IDE sie zum Springen braucht
 r = await compiler.compile(`void setup() {
   pinMode(13, OUTPUT);
 }

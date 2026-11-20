@@ -131,7 +131,12 @@
     position: absolute; top: 38px; left: 0; z-index: 20; min-width: 210px; padding: 6px;
     background: #fff; color: var(--text); border-radius: 8px;
     box-shadow: 0 8px 28px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+    max-height: 70vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
   }
+  .menu details { border-top: 1px solid rgba(0,0,0,.08); margin-top: 4px; padding-top: 4px; }
+  .menu summary { padding: 9px 12px; font-weight: 600; cursor: pointer; border-radius: 6px; }
+  .menu summary:hover { background: var(--accent-soft); }
+  .menu details button { padding-left: 24px; }
   .menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 6px; }
   .menu button:hover, .menu button:focus-visible { background: var(--accent-soft); outline: none; }
   .menu .hint { padding: 6px 12px 4px; font-size: 12px; color: #7a8487; }
@@ -225,6 +230,7 @@
     padding: 8px; background: #fff; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
     pointer-events: none; transform-origin: 50% 100%;
   }
+  :root[data-theme="bitbruecke"] .bit[hidden] { display: none; }
   :root[data-theme="bitbruecke"] .sheet .check { display: none; }
   :root[data-theme="bitbruecke"] .sheet .bit-sheet { display: block; height: 120px; margin: 0 auto 8px; }
 
@@ -319,11 +325,11 @@
   </div>
   <div class="log" id="log" role="log" aria-live="polite"></div>
   <img class="bit" id="bit" src="bit/bit_winken.png" data-state="winken" alt="">
+  <video class="bit" id="bit-video" muted playsinline loop preload="none" hidden></video>
 </section>
 
 <footer class="status">
   <span id="pos">Zeile 1, Spalte 1</span>
-  <span>Arduino Nano · kompiliert im Browser</span>
 </footer>
 
 <div class="dialog" id="dialog" hidden>
@@ -371,13 +377,24 @@ if (THEME === "bitbruecke") {
 
 // --- Maskottchen Bit (Bitbrücke IDE) ---
 // Zustände wie die Bilder in bit/: winken, denken, halten, jubeln, fehler, schlafen.
-// Animationen später: Datei bit/anim/bit_<zustand>.webm (oder .png als APNG) ablegen und hier
-// in BIT_ANIM eintragen, z. B. BIT_ANIM.jubeln = "bit/anim/bit_jubeln.png".
+// Bilder (.png, auch APNG) in BIT_ANIM, Videos in einer Schleife in BIT_VIDEO eintragen;
+// fehlt ein Zustand, zeigt die Ecke das Standbild bit/bit_<zustand>.png.
 const BIT_ANIM = {};
+const BIT_VIDEO = { schlafen: "bit/video/bit_schlafen.mp4" };
 let bitTimer = null;
 function setBit(state) {
   if (THEME !== "bitbruecke") return;
-  const el = document.getElementById("bit");
+  const el = document.getElementById("bit"), video = document.getElementById("bit-video");
+  if (BIT_VIDEO[state]) {
+    if (!video.src.endsWith(BIT_VIDEO[state])) video.src = BIT_VIDEO[state];
+    video.hidden = false;
+    el.hidden = true;
+    video.play().catch(() => { video.hidden = true; el.hidden = false; });   // sonst Standbild
+  } else {
+    video.pause();
+    video.hidden = true;
+    el.hidden = false;
+  }
   el.dataset.state = "";
   void el.offsetWidth;                       // CSS-Animation neu starten
   el.src = BIT_ANIM[state] || `bit/bit_${state}.png`;
@@ -414,13 +431,17 @@ document.getElementById("bitpop-video").addEventListener("ended", () => {
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeBitVideo(); });
 
-// Startbild: Bit winkt (bit/video/bit_oeffnen.mp4), bis die Animation zu Ende und der Compiler
-// geladen ist. Antippen schließt sofort.
+// Startbild: Bit winkt (bit/video/bit_oeffnen.mp4) in einer Schleife, solange der Compiler lädt.
+// Danach winkt er noch zu Ende, dann schließt das Startbild. Antippen schließt sofort.
 let splashVideoDone = false, splashCompilerDone = false;
 function maybeCloseSplash() {
   if (splashVideoDone && splashCompilerDone) document.getElementById("splash").hidden = true;
 }
-function closeSplash() { splashCompilerDone = true; maybeCloseSplash(); }
+function closeSplash() {
+  splashCompilerDone = true;
+  document.getElementById("splash-video").loop = false;    // diese Runde noch zu Ende winken
+  maybeCloseSplash();
+}
 if (THEME === "bitbruecke") {
   const splash = document.getElementById("splash"), sv = document.getElementById("splash-video");
   splash.hidden = false;
@@ -428,6 +449,7 @@ if (THEME === "bitbruecke") {
   const videoDone = () => { splashVideoDone = true; maybeCloseSplash(); };
   sv.addEventListener("ended", videoDone);
   sv.addEventListener("error", videoDone);
+  sv.loop = true;
   sv.src = "bit/video/bit_oeffnen.mp4";
   sv.play().catch(videoDone);              // falls der Browser nicht automatisch abspielt
 } else {
@@ -854,20 +876,31 @@ $("save").addEventListener("click", async () => {
 // --- Beispiele ---
 const menu = $("examples-menu");
 menu.innerHTML = '<div class="hint">Beispiel öffnen</div>';
-for (const name of Object.keys(EXAMPLES)) {
+function addExample(parent, name, code, file = name) {
   const b = document.createElement("button");
   b.textContent = name;
   b.setAttribute("role", "menuitem");
   b.addEventListener("click", () => {
     toggleMenu(false);
-    if (codeEl.value.trim() && codeEl.value !== EXAMPLES[name] &&
+    if (codeEl.value.trim() && codeEl.value !== code &&
         !confirm(`Beispiel „${name}“ öffnen? Der aktuelle Code wird ersetzt.`)) return;
-    setSketchName(name);
-    setCode(EXAMPLES[name]);
+    setSketchName(file);
+    setCode(code);
     logLine(`Beispiel „${name}“ geöffnet.`, "info");
   });
-  menu.appendChild(b);
+  parent.appendChild(b);
 }
+for (const name of Object.keys(EXAMPLES)) addExample(menu, name, EXAMPLES[name]);
+// Weitere Gruppen (Workshop, Bibliotheken) aus beispiele.json, zusammengestellt von package.sh
+fetch("beispiele.json").then((r) => (r.ok ? r.json() : [])).then((gruppen) => {
+  for (const g of gruppen) {
+    const d = document.createElement("details");
+    d.innerHTML = `<summary></summary>`;
+    d.firstChild.textContent = `${g.name} (${g.sketches.length})`;
+    for (const sk of g.sketches) addExample(d, sk.name, sk.code, sk.file);
+    menu.appendChild(d);
+  }
+}).catch(() => {});
 function toggleMenu(open) {
   menu.hidden = !open;
   $("examples").setAttribute("aria-expanded", String(open));
@@ -884,8 +917,32 @@ setCode(load(STORE_CODE, EXAMPLES["Blink"]));
 logLine(IDE_NAME + " bereit. ✓ = Überprüfen, → = Hochladen auf den Nano über das Dock.", "info");
 
 // Compiler im Hintergrund laden (beim ersten Mal einige MB, danach aus dem Browser-Speicher)
+// Der Ladetext wechselt höchstens alle 1,5 s, sonst flackern Prozentzahl und Text zu schnell.
+// Die Prozentzahl läuft dazwischen weiter, der Text bleibt stehen.
+let loadShownAt = 0, loadLabel = "", loadPending = null, loadTimer = null;
+function loadText(text) {
+  const label = text.replace(/\s*[\d.,]+\s*(%|MB).*$/, "");
+  const show = (t) => {
+    loadShownAt = Date.now(); loadLabel = t.replace(/\s*[\d.,]+\s*(%|MB).*$/, ""); loadPending = null;
+    if (!busy) $("progress-text").textContent = t;
+    $("splash-text").textContent = t;
+  };
+  if (label === loadLabel) {                 // nur die Prozentzahl ändert sich: sofort zeigen
+    if (!busy) $("progress-text").textContent = text;
+    $("splash-text").textContent = text;
+    return;
+  }
+  const wait = 1500 - (Date.now() - loadShownAt);
+  if (wait <= 0) return show(text);
+  loadPending = text;
+  clearTimeout(loadTimer);
+  loadTimer = setTimeout(() => loadPending && show(loadPending), wait);
+}
 compilerReady
-  .then((c) => c.load((text) => { if (!busy) { $("progress").classList.add("on"); $("progress-text").textContent = text; } $("splash-text").textContent = text; }))
+  .then((c) => c.load((text) => {
+    if (!busy) $("progress").classList.add("on");
+    loadText(text);
+  }))
   .then((r) => {
     if (!busy) $("progress").classList.remove("on");
     if (r && r.ok === false) logLine(r.log, "error");

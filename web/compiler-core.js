@@ -2,7 +2,7 @@
 // Gleiche Schritte und Optionen wie test/test.sh, nur mit der WASI-Laufzeit aus wasi.js.
 // Läuft im Web Worker (compiler-worker.js) und unter Node.js (test-node.mjs).
 
-import { WASI, makeDir, writeFile, readFile, mkdirp } from "./wasi.js";
+import { WASI, makeDir, writeFile, readFile, mkdirp, lookup } from "./wasi.js";
 
 // Speicher des Arduino Nano (ATmega328P mit Bootloader)
 export const FLASH_MAX = 30720;
@@ -11,16 +11,19 @@ export const RAM_MAX = 2048;
 const FLAGS = [
   "--target=avr", "-mmcu=atmega328p", "-Os", "-ffunction-sections", "-fdata-sections",
   "-DF_CPU=16000000L", "-DARDUINO=10819", "-DARDUINO_AVR_NANO", "-DARDUINO_ARCH_AVR",
-  "-resource-dir", "/clang", "-isystem", "/avr/include",
+  "-resource-dir", "/clang", "-isystem", "/compat", "-isystem", "/avr/include",   // compat: pgmspace.h für clang
   "-I/core/cores/arduino", "-I/core/variants/eightanaloginputs",
   "-Wno-unknown-attributes", "-D__HAS_DELAY_CYCLES=0",
+  // UINT8_MAX & Co. auch in C++ (avr-gcc setzt das selbst, manche Bibliotheken brauchen es)
+  "-D__STDC_LIMIT_MACROS", "-D__STDC_CONSTANT_MACROS",
   '-D__ATTR_PROGMEM__=__attribute__((section(".progmem.data")))',
   "-fno-color-diagnostics", "-fmessage-length=0",
 ];
 const CXX = ["-std=gnu++11", "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics"];
 
 // --- tar-Archiv (ustar) mit dem Sysroot einlesen ---
-// Inhalt: avr/ (avr-libc und libgcc), clang/include, core/ (Arduino-Header und libcore.a), avr5_lld.ld
+// Inhalt: avr/ (avr-libc und libgcc), clang/include, core/ (Arduino-Header und libcore.a), avr5_lld.ld,
+// libraries/<Name>/ (Header und lib<Name>.a: Wire, SPI, Adafruit SSD1306, LiquidCrystal_I2C …)
 export function loadTar(root, buf) {
   const dec = new TextDecoder();
   const field = (off, len) => { const s = dec.decode(buf.subarray(off, off + len)); const i = s.indexOf("\0"); return i < 0 ? s : s.slice(0, i); };
@@ -97,6 +100,16 @@ export class Compiler {
     this.root = makeDir();
     this.files = loadTar(this.root, sysroot);
     mkdirp(this.root, "tmp");
+    // Bibliotheken: jeder Ordner ist ein Include-Pfad, das Archiv wird mitgelinkt. Der Linker
+    // nimmt aus einem Archiv nur, was der Sketch wirklich braucht.
+    const [libs] = lookup(this.root, "libraries");
+    this.libInclude = [];
+    this.libArchives = [];
+    for (const [name, node] of (libs && libs.dir) || []) {
+      if (!node.dir) continue;
+      this.libInclude.push(`-I/libraries/${name}`);
+      if (node.dir.has(`lib${name}.a`)) this.libArchives.push(`/libraries/${name}/lib${name}.a`);
+    }
   }
 
   // Ein Werkzeug aus llvm.wasm ausführen (clang, ld.lld, llvm-objcopy, llvm-size …)
@@ -126,12 +139,12 @@ export class Compiler {
       return r;
     };
 
-    let r = await step("Übersetzen …", "clang", [...FLAGS, ...CXX, "-c", W + "/sketch.cpp", "-o", W + "/sketch.o"]);
+    let r = await step("Übersetzen …", "clang", [...FLAGS, ...this.libInclude, ...CXX, "-c", W + "/sketch.cpp", "-o", W + "/sketch.o"]);
     if (r.code) return { ok: false, hex: null, log: log.join("\n"), ms: Date.now() - t0 };
 
     r = await step("Linken …", "ld.lld", ["--gc-sections", "-T", "/avr5_lld.ld",
       "-u", "__do_copy_data", "-u", "__do_clear_bss", "-u", "__do_global_ctors",
-      "/avr/lib/crtatmega328p.o", W + "/sketch.o", "/core/libcore.a",
+      "/avr/lib/crtatmega328p.o", W + "/sketch.o", ...this.libArchives, "/core/libcore.a",
       "-L/avr/lib", "--start-group", "-lgcc", "-lm", "-lc", "-latmega328p", "--end-group",
       "-o", W + "/sketch.elf"]);
     if (r.code) return { ok: false, hex: null, log: log.join("\n"), ms: Date.now() - t0 };

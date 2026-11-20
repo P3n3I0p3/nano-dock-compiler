@@ -2,7 +2,8 @@
 # Prüft dist/llvm.wasm: übersetzt die Test-Sketches für den Arduino Nano (ATmega328P)
 # vollständig mit dem WebAssembly-Compiler (wasmtime), genau wie später im Browser.
 # Erwartet (in GitHub Actions bereitgestellt):
-#   wasmtime im PATH, avr-libc unter /usr/lib/avr, libgcc für AVR, Arduino-Core in test/work/core
+#   wasmtime im PATH, avr-libc unter /usr/lib/avr, libgcc für AVR, Arduino-Core in test/work/core,
+#   Bibliotheken in test/work/libraries (von libraries.sh)
 set -euo pipefail
 cd "$(dirname "$0")"
 DIST=$(cd ../dist && pwd)
@@ -16,18 +17,19 @@ CORE=$W/core/cores/arduino
 VARIANT=$W/core/variants/eightanaloginputs
 
 # Alles, was der Compiler sieht, liegt in einem virtuellen Dateisystem, wie im Browser:
-#   /avr = avr-libc, /clang = clang-Header, /core = Arduino-Core, /w = Arbeitsordner,
+#   /avr = avr-libc, /clang = clang-Header, /core = Arduino-Core, /libraries = Bibliotheken,
+#   /w = Arbeitsordner,
 #   /tmp = Zwischendateien (clang braucht sie z. B. für Assembler-Dateien .S)
 export WASMTIME_BACKTRACE_DETAILS=1
 run() {
-  wasmtime run -W max-wasm-stack=4194304 --env TMPDIR=/tmp --dir "$W/tmp::/tmp" --dir "$AVR::/avr" --dir "$W/clang::/clang" --dir "$W/core::/core" --dir "$(pwd)::/w" \
+  wasmtime run -W max-wasm-stack=4194304 --env TMPDIR=/tmp --dir "$W/tmp::/tmp" --dir "$AVR::/avr" --dir "$W/clang::/clang" --dir "$W/core::/core" --dir "$W/libraries::/libraries" --dir "$(pwd)::/w" \
     "$DIST/llvm.wasm" "$@"
 }
 
 FLAGS=(--target=avr -mmcu=atmega328p -Os -ffunction-sections -fdata-sections
        -DF_CPU=16000000L -DARDUINO=10819 -DARDUINO_AVR_NANO -DARDUINO_ARCH_AVR
-       -resource-dir /clang -isystem /avr/include -I/core/cores/arduino -I/core/variants/eightanaloginputs
-       -Wno-unknown-attributes -D__HAS_DELAY_CYCLES=0
+       -resource-dir /clang -isystem /w/compat -isystem /avr/include -I/core/cores/arduino -I/core/variants/eightanaloginputs
+       -Wno-unknown-attributes -D__HAS_DELAY_CYCLES=0 -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS
        '-D__ATTR_PROGMEM__=__attribute__((section(".progmem.data")))')
 CXX=(-std=gnu++11 -fno-exceptions -fno-rtti -fno-threadsafe-statics)
 
@@ -75,6 +77,29 @@ if [ ${#failed[@]} -gt 0 ]; then
 fi
 run llvm-ar rcs /w/$W/out/libcore.a "${objs[@]}"
 echo "| Arduino-Core (${#objs[@]} Dateien) | $(( $(ms) - t0 )) ms |" >> $REPORT
+
+# Bibliotheken (Wire, SPI, Adafruit SSD1306, LiquidCrystal_I2C …) je zu /libraries/<Name>/lib<Name>.a.
+# Jeder Bibliotheksordner ist ein Include-Pfad, so finden sich die Bibliotheken auch gegenseitig.
+LIBINC=()
+for d in $W/libraries/*/; do LIBINC+=(-I/libraries/$(basename "$d")); done
+FLAGS+=("${LIBINC[@]}")
+t0=$(ms)
+for d in $W/libraries/*/; do
+  n=$(basename "$d"); objs=()
+  # alle .c/.cpp, auch in Unterordnern (z. B. utility/, clib/, avr/)
+  while IFS= read -r -d '' src; do
+    rel=${src#$W/}
+    o="/w/$W/out/lib_${n}_$(echo "${src#$d}" | tr '/' '_').o"
+    if compile "/$rel" "$o" 2> $W/out/lib_$n.err; then objs+=("$o")
+    else failed+=("$n/${src#$d}"); echo "FEHLER bei $n/${src#$d}:"; head -30 $W/out/lib_$n.err; fi
+  done < <(find "$d" \( -name '*.c' -o -name '*.cpp' \) -print0 | sort -z)
+  [ ${#objs[@]} -gt 0 ] && run llvm-ar rcs "/libraries/$n/lib$n.a" "${objs[@]}"
+done
+if [ ${#failed[@]} -gt 0 ]; then
+  echo "| Bibliotheken: Fehler bei ${failed[*]} | |" >> $REPORT
+  cat $REPORT; exit 1
+fi
+echo "| Bibliotheken ($(ls -d $W/libraries/*/ | wc -l) Stück) | $(( $(ms) - t0 )) ms |" >> $REPORT
 
 link() {      # $1 Name, weitere: Objektdateien
   local name=$1; shift

@@ -1,0 +1,13 @@
+ErstesBlinken
+DasLauflicht
+DieEchteAmpel
+OrdnungMitFunktionen
+GelbBlinkt5-mal
+ZweiAmpelnAnDerKreuzung
+DieGanzeKreuzung
+AmpelAufKnopfdruck
+DieFussgaengerampel
+DerNachtmodus
+DeinTextAufDemDisplay
+DasDisplayZeigtDieAmpel
+DieGanzeKreuzungMitDisplay
