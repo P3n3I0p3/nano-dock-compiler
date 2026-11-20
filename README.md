@@ -14,6 +14,12 @@ das AVR-Ziel. Dieses Repo übernimmt dessen Bauweise und baut **nur das, was die
 AVR als einziges Ziel, dazu clang, ld.lld, llvm-objcopy, llvm-size, llvm-nm und llvm-ar in einem
 Programm (`llvm.wasm`). Das hält die Datei klein.
 
+## Browser-IDE
+
+Im Ordner [`web/`](web/README.md) liegt die IDE, die diesen Compiler im Browser nutzt
+(Penelope IDE, mit `?ide=ada` die Ada Lovelace IDE). GitHub Actions baut daraus den fertigen
+Ordner `ide/`, der auf jedem einfachen Webserver läuft.
+
 ## Ablauf
 
 Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem eigenen Computer:
@@ -25,7 +31,9 @@ Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem
    ein Sketch mit `Serial`, `millis` und `float`. Geprüft wird, dass eine HEX-Datei entsteht,
    die Startroutinen enthalten sind und die Pin-Tabellen im Flash liegen. Die Dauer jedes
    Schritts steht in der Zusammenfassung des Laufs.
-3. **release** (bei Tags `v*`): `llvm.wasm` als Download.
+3. **IDE:** `web/package.sh` stellt den Ordner `ide/` zusammen (Compiler, Arduino-Dateien, Seite),
+   `web/test-node.mjs` prüft ihn unter Node.js mit demselben Code wie im Browser.
+4. **release** (bei Tags `v*`): `llvm.wasm` und `nano-dock-ide.zip` als Download.
 
 ## Anpassungen an LLVM für WebAssembly
 

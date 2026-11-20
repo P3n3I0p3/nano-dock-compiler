@@ -77,6 +77,22 @@ jobs:
           test/test.sh
           cat test/work/out/bericht.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: IDE zusammenstellen
+        run: web/package.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Derselbe JavaScript-Code wie im Browser; die HEX-Dateien müssen mit denen aus test.sh übereinstimmen
+      - name: Browser-Compiler mit Node.js testen
+        run: node web/test-node.mjs ide test/sketches test/work/out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nano-dock-ide
+          path: ide/
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -92,7 +108,13 @@ jobs:
         with:
           name: nano-dock-compiler
           path: dist
-      - name: Release mit llvm.wasm
+      - uses: actions/download-artifact@v4
+        with:
+          name: nano-dock-ide
+          path: ide
+      - name: Release mit llvm.wasm und der fertigen IDE
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --notes "LLVM mit AVR als WebAssembly, getestet mit den Nano-Sketches."
+        run: |
+          (cd ide && zip -r ../dist/nano-dock-ide.zip .)
+          gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --notes "LLVM mit AVR als WebAssembly und die Browser-IDE, getestet mit den Nano-Sketches."

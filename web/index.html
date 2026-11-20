@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="de" data-theme="penelope">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Penelope IDE">
+<meta name="theme-color" content="#006b6f">
+<title>Penelope IDE</title>
+<script>
+  // Penelope IDE (Standard) oder Ada Lovelace IDE mit ?ide=ada in der Adresse
+  if (/[?&]ide=ada\b/.test(location.search)) {
+    document.documentElement.dataset.theme = "ada";
+    document.title = "Ada Lovelace IDE";
+    document.querySelector('meta[name="theme-color"]').content = "#a3161f";
+    document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "Ada Lovelace IDE";
+  }
+</script>
+<style>
+  :root {
+    color-scheme: light;
+    --bar: #006b6f;          /* Werkzeugleiste */
+    --bar-dark: #005559;
+    --round: #00979c;        /* Überprüfen / Hochladen */
+    --round-hover: #17b3b8;
+    --accent-soft: #e6f4f4;  /* Menü-Hervorhebung */
+    --selection: rgba(0,151,156,.25);
+    --tabs: #ececec;
+    --tab-active: #ffffff;
+    --editor: #ffffff;
+    --gutter: #f6f7f7;
+    --gutter-text: #a3a9ab;
+    --text: #2b3133;
+    --out-bg: #1f2628;
+    --out-head: #2c3437;
+    --out-text: #e6eaeb;
+    --out-error: #ff8f73;
+    --out-warn: #f3c969;
+    --out-ok: #7fd9b9;
+    --out-info: #9fb2b6;
+    --status: #005c5f;
+    /* Syntaxfarben wie im Arduino-Editor */
+    --hl-type: #00979c;
+    --hl-keyword: #728e00;
+    --hl-func: #d35400;
+    --hl-const: #00979c;
+    --hl-comment: #95a5a6;
+    --hl-string: #005c5f;
+    --hl-pre: #728e00;
+    --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  /* Ada Lovelace IDE: gleiche Oberfläche in Rot */
+  :root[data-theme="ada"] {
+    --bar: #a3161f;
+    --bar-dark: #82111a;
+    --round: #d42a37;
+    --round-hover: #ec4752;
+    --status: #82111a;
+    --accent-soft: #fbe8ea;
+    --selection: rgba(212,42,55,.22);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column; height: 100vh; height: 100dvh;
+    background: var(--editor); color: var(--text);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent; overflow: hidden;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  svg { display: block; }
+
+  /* Werkzeugleiste */
+  .toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    background: var(--bar); color: #fff; flex-wrap: wrap;
+  }
+  .round {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--round);
+    display: grid; place-items: center; color: #fff; transition: background .15s;
+  }
+  .round:hover, .round:focus-visible { background: var(--round-hover); outline: none; }
+  .round:disabled { opacity: .55; cursor: default; }
+  .tool {
+    height: 32px; min-width: 32px; padding: 0 8px; border-radius: 6px;
+    display: inline-flex; align-items: center; gap: 6px; color: #e3f4f4;
+  }
+  .tool:hover, .tool:focus-visible { background: var(--bar-dark); outline: none; }
+  .sep { width: 1px; height: 24px; background: rgba(255,255,255,.25); margin: 0 4px; }
+  .board {
+    display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+    background: var(--bar-dark); border-radius: 6px; font-weight: 600; margin-left: 4px;
+  }
+  .brand { margin-left: auto; font-weight: 700; letter-spacing: .02em; opacity: .95; white-space: nowrap; }
+  .menu-wrap { position: relative; }
+  .menu {
+    position: absolute; top: 38px; left: 0; z-index: 20; min-width: 210px; padding: 6px;
+    background: #fff; color: var(--text); border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06);
+  }
+  .menu button { display: block; width: 100%; text-align: left; padding: 9px 12px; border-radius: 6px; }
+  .menu button:hover, .menu button:focus-visible { background: var(--accent-soft); outline: none; }
+  .menu .hint { padding: 6px 12px 4px; font-size: 12px; color: #7a8487; }
+
+  /* Reiter */
+  .tabs { display: flex; background: var(--tabs); border-bottom: 1px solid #dadddd; padding: 0 8px; }
+  .tab {
+    padding: 8px 16px; background: var(--tab-active); border-top: 2px solid var(--round);
+    border-left: 1px solid #dadddd; border-right: 1px solid #dadddd; margin-bottom: -1px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  /* Editor */
+  .editor { flex: 1; display: flex; min-height: 0; position: relative; background: var(--editor); }
+  .gutter {
+    flex: none; width: 52px; overflow: hidden; background: var(--gutter); color: var(--gutter-text);
+    text-align: right; padding: 12px 10px 12px 0; user-select: none;
+    font: 15px/22px var(--font-code);
+  }
+  .gutter div.err { color: #fff; background: #e4572e; border-radius: 3px 0 0 3px; margin-right: -10px; padding-right: 10px; }
+  .code { flex: 1; position: relative; min-width: 0; }
+  .code pre, .code textarea {
+    position: absolute; inset: 0; margin: 0; padding: 12px 14px; border: 0;
+    font: 15px/22px var(--font-code); tab-size: 2; white-space: pre; overflow: auto;
+    letter-spacing: 0; word-wrap: normal;
+  }
+  .code pre { pointer-events: none; color: var(--text); overflow: hidden; }
+  .code textarea {
+    background: transparent; color: transparent; -webkit-text-fill-color: transparent;
+    caret-color: #1a1f21; resize: none; outline: none;
+  }
+  .code textarea::selection { background: var(--selection); }
+  .t-type { color: var(--hl-type); }
+  .t-kw { color: var(--hl-keyword); }
+  .t-fn { color: var(--hl-func); }
+  .t-const { color: var(--hl-const); }
+  .t-com { color: var(--hl-comment); }
+  .t-str, .t-num { color: var(--hl-string); }
+  .t-pre { color: var(--hl-pre); }
+  .t-main { color: #5e6d03; font-weight: 700; }
+
+  /* Ausgabe */
+  .output { flex: none; height: 30%; min-height: 120px; display: flex; flex-direction: column; background: var(--out-bg); color: var(--out-text); }
+  .output-head {
+    display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--out-head);
+    font-size: 13px; font-weight: 600; color: #cfd8da;
+  }
+  .output-head .spacer { flex: 1; }
+  .output-head button { padding: 3px 8px; border-radius: 5px; color: #cfd8da; }
+  .output-head button:hover { background: rgba(255,255,255,.08); }
+  .progress { display: none; align-items: center; gap: 8px; font-weight: 500; color: #9fe3e5; }
+  .progress.on { display: inline-flex; }
+  .spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .log { flex: 1; overflow: auto; padding: 8px 12px 12px; font: 13px/1.5 var(--font-code); white-space: pre-wrap; word-break: break-word; }
+  .log .error { color: var(--out-error); }
+  .log .warn { color: var(--out-warn); }
+  .log .ok { color: var(--out-ok); font-weight: 600; }
+  .log .info { color: var(--out-info); }
+  .log a { color: inherit; text-decoration: underline; cursor: pointer; }
+
+  /* Statusleiste */
+  .status {
+    display: flex; gap: 16px; justify-content: space-between; padding: 4px 12px;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    background: var(--status); color: #d6eeee; font-size: 12px;
+  }
+
+  /* Dialog zum Speichern aufs Dock */
+  .dialog { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(10,20,22,.45); padding: 16px; }
+  .dialog[hidden] { display: none; }
+  .sheet { width: min(420px, 100%); background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.3); text-align: center; }
+  .sheet .check { width: 52px; height: 52px; margin: 0 auto 12px; border-radius: 50%; background: #e2f5ef; color: #0b8a63; display: grid; place-items: center; }
+  .sheet h2 { margin: 0 0 8px; font-size: 19px; }
+  .sheet p { margin: 0 0 20px; color: #59646a; }
+  .primary { width: 100%; padding: 14px; border-radius: 10px; background: var(--round); color: #fff; font-weight: 700; font-size: 16px; }
+  .primary:hover { background: var(--round-hover); }
+  .link { margin-top: 10px; padding: 8px; color: #59646a; }
+
+  @media (max-width: 700px) {
+    .brand, .tool .label { display: none; }
+    .output { height: 34%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+  <button id="verify" class="round" title="Überprüfen (⌘R)" aria-label="Überprüfen">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"/></svg>
+  </button>
+  <button id="upload" class="round" title="Hochladen (⌘U)" aria-label="Hochladen">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+  </button>
+  <div class="sep"></div>
+  <button id="new" class="tool" title="Neuer Sketch">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    <span class="label">Neu</span>
+  </button>
+  <button id="open" class="tool" title="Sketch öffnen">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span class="label">Öffnen</span>
+  </button>
+  <button id="save" class="tool" title="Sketch als .ino speichern">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><polyline points="7 10 12 15 17 10"/><path d="M5 19h14"/></svg>
+    <span class="label">Speichern</span>
+  </button>
+  <div class="menu-wrap">
+    <button id="examples" class="tool" aria-haspopup="true" aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>
+      <span class="label">Beispiele</span>
+    </button>
+    <div id="examples-menu" class="menu" role="menu" hidden></div>
+  </div>
+  <div class="board" title="Board">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="9" rx="1"/><path d="M9 11v4a3 3 0 0 0 6 0v-4"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+    Arduino Nano
+  </div>
+  <div class="brand" id="brand">Penelope IDE</div>
+</header>
+
+<nav class="tabs"><div class="tab" id="tab" title="Antippen zum Umbenennen"><span id="sketch-name">sketch</span>.ino</div></nav>
+
+<main class="editor">
+  <div class="gutter" id="gutter" aria-hidden="true"></div>
+  <div class="code">
+    <pre id="highlight" aria-hidden="true"></pre>
+    <textarea id="code" wrap="off" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" aria-label="Code"></textarea>
+  </div>
+</main>
+
+<section class="output" aria-label="Ausgabe">
+  <div class="output-head">
+    <span>Ausgabe</span>
+    <span class="progress" id="progress"><span class="spinner"></span><span id="progress-text">Kompiliere …</span></span>
+    <span class="spacer"></span>
+    <button id="clear" title="Ausgabe leeren">Leeren</button>
+  </div>
+  <div class="log" id="log" role="log" aria-live="polite"></div>
+</section>
+
+<footer class="status">
+  <span id="pos">Zeile 1, Spalte 1</span>
+  <span>Arduino Nano · kompiliert im Browser</span>
+</footer>
+
+<div class="dialog" id="dialog" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"/></svg></div>
+    <h2 id="dialog-title">Bereit zum Hochladen</h2>
+    <p>Speichere das Programm jetzt auf dem Laufwerk <b>NANO DOCK</b>. Das Dock flasht es danach automatisch auf den Nano.</p>
+    <button class="primary" id="dock-save">Auf Dock speichern</button>
+    <button class="link" id="dock-cancel">Abbrechen</button>
+  </div>
+</div>
+
+<input type="file" id="file" accept=".ino,.txt,.c,.cpp,text/plain" hidden>
+
+<script>
+const HEX_NAME = "SKETCH.HEX";
+const IDE_NAME = document.title;
+const THEME = document.documentElement.dataset.theme || "penelope";
+const STORE_CODE = THEME + "-ide-code";   // jede IDE merkt sich ihren eigenen Sketch
+const STORE_NAME = THEME + "-ide-name";
+document.getElementById("brand").textContent = IDE_NAME;
+
+// Compiler im Browser (llvm.wasm im Web Worker). Wird gleich beim Öffnen im Hintergrund geladen,
+// damit der erste Klick auf "Überprüfen" nicht warten muss.
+const compilerReady = import("./nanodock-compiler.js").then((m) => new m.NanoDockCompiler());
+
+const EXAMPLES = {
+  "Blink": `// Blink: die LED auf dem Nano blinkt im Sekundentakt
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);   // LED an
+  delay(1000);                       // 1 Sekunde warten
+  digitalWrite(LED_BUILTIN, LOW);    // LED aus
+  delay(1000);
+}
+`,
+  "Lauflicht": `// Lauflicht: 5 LEDs an D2 bis D6 (jeweils mit 220-Ohm-Widerstand nach GND)
+const int ersteLed = 2;
+const int anzahl = 5;
+
+void setup() {
+  for (int i = 0; i < anzahl; i++) {
+    pinMode(ersteLed + i, OUTPUT);
+  }
+}
+
+void loop() {
+  for (int i = 0; i < anzahl; i++) {
+    digitalWrite(ersteLed + i, HIGH);
+    delay(150);
+    digitalWrite(ersteLed + i, LOW);
+  }
+}
+`,
+  "Taster und LED": `// Taster an D2 (gegen GND) schaltet die LED auf dem Nano
+const int taster = 2;
+
+void setup() {
+  pinMode(taster, INPUT_PULLUP);     // ohne Druck HIGH, gedrückt LOW
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  if (digitalRead(taster) == LOW) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+}
+`,
+  "Ampel": `// Ampel: Rot an D4, Gelb an D3, Grün an D2
+const int rot = 4;
+const int gelb = 3;
+const int gruen = 2;
+
+void setup() {
+  pinMode(rot, OUTPUT);
+  pinMode(gelb, OUTPUT);
+  pinMode(gruen, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(rot, HIGH);  delay(3000);
+  digitalWrite(gelb, HIGH); delay(1000);
+  digitalWrite(rot, LOW);   digitalWrite(gelb, LOW);
+  digitalWrite(gruen, HIGH); delay(3000);
+  digitalWrite(gruen, LOW); digitalWrite(gelb, HIGH); delay(1000);
+  digitalWrite(gelb, LOW);
+}
+`,
+  "Display: Hallo Welt": `// Display: Text und Zähler auf dem 0,96"-OLED (128x64, I2C)
+// Anschluss: GND an GND, VCC an 5V, SDA an A4, SCL an A5
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+Adafruit_SSD1306 display(128, 64, &Wire, -1);
+int zaehler = 0;
+
+// Prüft, ob unter dieser I2C-Adresse ein Gerät antwortet
+bool gefunden(byte adresse) {
+  Wire.beginTransmission(adresse);
+  return Wire.endTransmission() == 0;
+}
+
+void setup() {
+  Wire.begin();
+  byte adresse = gefunden(0x3C) ? 0x3C : 0x3D;   // die meisten Displays: 0x3C
+  if (!gefunden(adresse)) {
+    // Kein Display gefunden: die L-LED blinkt schnell. Kabel prüfen!
+    pinMode(LED_BUILTIN, OUTPUT);
+    while (true) {
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+      delay(100);
+    }
+  }
+  display.begin(SSD1306_SWITCHCAPVCC, adresse);
+}
+
+void loop() {
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(2);          // große Schrift
+  display.setCursor(0, 0);
+  display.println("Hallo!");
+  display.setTextSize(1);          // kleine Schrift (Umlaute gehen hier nicht)
+  display.println("${IDE_NAME}");
+  display.setTextSize(3);
+  display.setCursor(0, 36);
+  display.print(zaehler);
+  display.display();               // erst jetzt erscheint alles auf dem Display
+  zaehler++;
+  delay(1000);
+}
+`,
+  "Dimmen (Fade)": `// Dimmen: LED an D9 wird langsam heller und dunkler
+const int led = 9;   // D9 kann PWM
+
+void setup() {
+  pinMode(led, OUTPUT);
+}
+
+void loop() {
+  for (int hell = 0; hell <= 255; hell++) {
+    analogWrite(led, hell);
+    delay(5);
+  }
+  for (int hell = 255; hell >= 0; hell--) {
+    analogWrite(led, hell);
+    delay(5);
+  }
+}
+`,
+};
+const NEW_SKETCH = `void setup() {
+  // Hier steht Code, der einmal beim Start läuft
+
+}
+
+void loop() {
+  // Hier steht Code, der immer wieder läuft
+
+}
+`;
+
+const $ = (id) => document.getElementById(id);
+const codeEl = $("code"), hlEl = $("highlight"), gutterEl = $("gutter"), logEl = $("log");
+let hexText = null, busy = false, errorLines = new Set();
+
+// --- Speicher (nur in diesem Browser) ---
+function load(key, fallback) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
+function store(key, value) { try { localStorage.setItem(key, value); } catch {} }
+
+// --- Syntaxhervorhebung ---
+const TYPES = new Set("void int long short float double char bool boolean byte word unsigned signed const static volatile String uint8_t uint16_t uint32_t int8_t int16_t int32_t size_t struct class enum".split(" "));
+const KEYWORDS = new Set("if else for while do return break continue switch case default goto sizeof new delete true false".split(" "));
+const CONSTS = new Set("HIGH LOW INPUT OUTPUT INPUT_PULLUP LED_BUILTIN A0 A1 A2 A3 A4 A5 A6 A7 PI".split(" "));
+const FUNCS = new Set("pinMode digitalWrite digitalRead analogRead analogWrite delay delayMicroseconds millis micros map constrain min max abs random randomSeed tone noTone pulseIn shiftOut shiftIn attachInterrupt detachInterrupt Serial begin print println available read write".split(" "));
+const TOKEN = /(\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$))|("(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(^[ \t]*#[a-z]+)|\b(0x[0-9a-fA-F]+|\d+(?:\.\d+)?[uUlLfF]*)\b|\b([A-Za-z_]\w*)\b/gm;
+
+function esc(s) { return s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]); }
+
+function highlight(src) {
+  let out = "", last = 0, m;
+  TOKEN.lastIndex = 0;
+  while ((m = TOKEN.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    let cls = null;
+    if (m[1]) cls = "t-com";
+    else if (m[2]) cls = "t-str";
+    else if (m[3]) cls = "t-pre";
+    else if (m[4]) cls = "t-num";
+    else if (m[5]) {
+      const w = m[5];
+      cls = (w === "setup" || w === "loop") ? "t-main" : TYPES.has(w) ? "t-type" : KEYWORDS.has(w) ? "t-kw"
+          : CONSTS.has(w) ? "t-const" : FUNCS.has(w) ? "t-fn" : null;
+    }
+    out += cls ? `<span class="${cls}">${esc(m[0])}</span>` : esc(m[0]);
+    last = TOKEN.lastIndex;
+  }
+  return out + esc(src.slice(last)) + "\n ";
+}
+
+let pending = false;
+function render() {
+  if (pending) return;
+  pending = true;
+  requestAnimationFrame(() => {
+    pending = false;
+    hlEl.innerHTML = highlight(codeEl.value);
+    const n = codeEl.value.split("\n").length;
+    let g = "";
+    for (let i = 1; i <= n; i++) g += `<div${errorLines.has(i) ? ' class="err"' : ""}>${i}</div>`;
+    gutterEl.innerHTML = g;
+    syncScroll();
+  });
+}
+function syncScroll() {
+  hlEl.scrollTop = codeEl.scrollTop;
+  hlEl.scrollLeft = codeEl.scrollLeft;
+  gutterEl.scrollTop = codeEl.scrollTop;
+}
+
+function setCode(text) {
+  codeEl.value = text;
+  errorLines.clear();
+  hexText = null;
+  store(STORE_CODE, text);
+  render();
+  updatePos();
+}
+
+function updatePos() {
+  const before = codeEl.value.slice(0, codeEl.selectionStart);
+  const line = before.split("\n").length;
+  const col = before.length - before.lastIndexOf("\n");
+  $("pos").textContent = `Zeile ${line}, Spalte ${col}`;
+}
+
+function gotoLine(line, col = 1) {
+  const lines = codeEl.value.split("\n");
+  let pos = 0;
+  for (let i = 0; i < line - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+  pos += Math.max(0, col - 1);
+  codeEl.focus();
+  codeEl.setSelectionRange(pos, pos);
+  codeEl.scrollTop = Math.max(0, (line - 4) * 22);
+  syncScroll();
+  updatePos();
+}
+
+// --- Editor-Verhalten ---
+codeEl.addEventListener("input", () => {
+  store(STORE_CODE, codeEl.value);
+  hexText = null;
+  if (errorLines.size) errorLines.clear();
+  render();
+  updatePos();
+});
+codeEl.addEventListener("scroll", syncScroll);
+["keyup", "click", "select"].forEach((e) => codeEl.addEventListener(e, updatePos));
+
+codeEl.addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "r") { e.preventDefault(); compile(false); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "u") { e.preventDefault(); compile(true); return; }
+  if (e.key === "Tab") {
+    e.preventDefault();
+    codeEl.setRangeText("  ", codeEl.selectionStart, codeEl.selectionEnd, "end");
+    codeEl.dispatchEvent(new Event("input"));
+  } else if (e.key === "Enter") {
+    // Einrückung der Zeile übernehmen, nach "{" zwei Leerzeichen mehr
+    e.preventDefault();
+    const start = codeEl.selectionStart;
+    const lineStart = codeEl.value.lastIndexOf("\n", start - 1) + 1;
+    const line = codeEl.value.slice(lineStart, start);
+    let indent = line.match(/^[ \t]*/)[0];
+    if (/\{\s*$/.test(line)) indent += "  ";
+    codeEl.setRangeText("\n" + indent, start, codeEl.selectionEnd, "end");
+    codeEl.dispatchEvent(new Event("input"));
+  }
+});
+
+// --- Ausgabe ---
+function logLine(text, cls = "") {
+  const div = document.createElement("div");
+  if (cls) div.className = cls;
+  const m = text.match(/sketch\.ino:(\d+):(\d+):/);
+  if (m) {
+    const a = document.createElement("a");
+    a.textContent = text;
+    a.addEventListener("click", () => gotoLine(+m[1], +m[2]));
+    div.appendChild(a);
+  } else {
+    div.textContent = text;
+  }
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+$("clear").addEventListener("click", () => { logEl.textContent = ""; });
+
+function classify(line) {
+  if (/\b(error|Fehler)\b/i.test(line)) return "error";
+  if (/\b(warning|Warnung)\b/i.test(line)) return "warn";
+  return "";
+}
+
+function setBusy(on, text) {
+  busy = on;
+  $("verify").disabled = $("upload").disabled = on;
+  $("progress").classList.toggle("on", on);
+  if (text) $("progress-text").textContent = text;
+}
+
+// --- Kompilieren ---
+async function compile(forUpload) {
+  if (busy) return;
+  setBusy(true, forUpload ? "Kompiliere für den Upload …" : "Überprüfe Sketch …");
+  logEl.textContent = "";
+  hexText = null;
+  errorLines.clear();
+  logLine(forUpload ? "Sketch wird kompiliert …" : "Sketch wird überprüft …", "info");
+  try {
+    const compiler = await compilerReady;
+    const data = await compiler.compile(codeEl.value, (text) => setBusy(true, text));
+    for (const line of (data.log || "").split("\n")) {
+      if (!line.trim()) continue;
+      logLine(line, classify(line));
+      const m = line.match(/sketch\.ino:(\d+):\d+:\s*(error|Fehler)/i);
+      if (m) errorLines.add(+m[1]);
+    }
+    render();
+    if (data.ok) {
+      hexText = data.hex;
+      logLine(forUpload ? "Kompilierung abgeschlossen. Jetzt auf das Dock speichern." : "Kompilierung abgeschlossen.", "ok");
+      if (forUpload) openDialog();
+    } else {
+      logLine("Kompilierung fehlgeschlagen. Tippe auf eine Fehlermeldung, um zur Zeile zu springen.", "error");
+      if (errorLines.size) gotoLine(Math.min(...errorLines));
+    }
+  } catch (err) {
+    logLine("Der Compiler konnte nicht gestartet werden: " + (err && err.message || err), "error");
+  } finally {
+    setBusy(false);
+  }
+}
+$("verify").addEventListener("click", () => compile(false));
+$("upload").addEventListener("click", () => compile(true));
+
+// --- Aufs Dock speichern ---
+function openDialog() { $("dialog").hidden = false; $("dock-save").focus(); }
+function closeDialog() { $("dialog").hidden = true; }
+$("dock-cancel").addEventListener("click", closeDialog);
+$("dialog").addEventListener("click", (e) => { if (e.target.id === "dialog") closeDialog(); });
+
+function download(file) {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// Teilen-Menü (nur über HTTPS) oder normaler Download
+async function shareOrDownload(file) {
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch (err) {
+      if (err.name === "AbortError") return "aborted";
+    }
+  }
+  download(file);
+  return "downloaded";
+}
+
+$("dock-save").addEventListener("click", async () => {
+  if (!hexText) return closeDialog();
+  closeDialog();
+  const result = await shareOrDownload(new File([hexText], HEX_NAME, { type: "application/octet-stream" }));
+  if (result === "shared") {
+    logLine("Gespeichert. Achte auf die LED am Dock: orange = flasht, grün = fertig.", "ok");
+  } else if (result === "downloaded") {
+    logLine("SKETCH.HEX wurde heruntergeladen. In der Dateien-App aus „Downloads“ auf NANO DOCK ziehen.", "ok");
+    logLine("Danach die LED am Dock beobachten: orange = flasht, grün = fertig.", "info");
+  } else {
+    logLine("Hochladen abgebrochen.", "info");
+  }
+});
+
+// --- Datei-Funktionen ---
+function sketchName() { return $("sketch-name").textContent; }
+function setSketchName(name) {
+  name = (name || "sketch").replace(/\.ino$/i, "").replace(/[^\w\-äöüÄÖÜß]+/g, "_").slice(0, 40) || "sketch";
+  $("sketch-name").textContent = name;
+  store(STORE_NAME, name);
+}
+$("tab").addEventListener("click", () => {
+  const name = prompt("Name des Sketches:", sketchName());
+  if (name !== null) setSketchName(name);
+});
+
+$("new").addEventListener("click", () => {
+  if (codeEl.value.trim() && !confirm("Neuen Sketch beginnen? Der aktuelle Code wird ersetzt.")) return;
+  setSketchName("sketch");
+  setCode(NEW_SKETCH);
+  gotoLine(3, 3);
+});
+
+$("open").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", async () => {
+  const f = $("file").files[0];
+  if (!f) return;
+  setSketchName(f.name);
+  setCode(await f.text());
+  logLine(`„${f.name}“ geöffnet.`, "info");
+  $("file").value = "";
+});
+
+$("save").addEventListener("click", async () => {
+  const file = new File([codeEl.value], sketchName() + ".ino", { type: "text/plain" });
+  const result = await shareOrDownload(file);
+  if (result !== "aborted") logLine(`${file.name} gespeichert.`, "info");
+});
+
+// --- Beispiele ---
+const menu = $("examples-menu");
+menu.innerHTML = '<div class="hint">Beispiel öffnen</div>';
+for (const name of Object.keys(EXAMPLES)) {
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.setAttribute("role", "menuitem");
+  b.addEventListener("click", () => {
+    toggleMenu(false);
+    if (codeEl.value.trim() && codeEl.value !== EXAMPLES[name] &&
+        !confirm(`Beispiel „${name}“ öffnen? Der aktuelle Code wird ersetzt.`)) return;
+    setSketchName(name);
+    setCode(EXAMPLES[name]);
+    logLine(`Beispiel „${name}“ geöffnet.`, "info");
+  });
+  menu.appendChild(b);
+}
+function toggleMenu(open) {
+  menu.hidden = !open;
+  $("examples").setAttribute("aria-expanded", String(open));
+}
+$("examples").addEventListener("click", (e) => { e.stopPropagation(); toggleMenu(menu.hidden); });
+document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) toggleMenu(false); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { toggleMenu(false); closeDialog(); }
+});
+
+// --- Start ---
+setSketchName(load(STORE_NAME, "Blink"));
+setCode(load(STORE_CODE, EXAMPLES["Blink"]));
+logLine(IDE_NAME + " bereit. ✓ = Überprüfen, → = Hochladen auf den Nano über das Dock.", "info");
+
+// Compiler im Hintergrund laden (beim ersten Mal einige MB, danach aus dem Browser-Speicher)
+compilerReady
+  .then((c) => c.load((text) => { if (!busy) { $("progress").classList.add("on"); $("progress-text").textContent = text; } }))
+  .then((r) => {
+    if (!busy) $("progress").classList.remove("on");
+    if (r && r.ok === false) logLine(r.log, "error");
+    else logLine("Compiler geladen. Er läuft komplett im Browser, ohne Server.", "ok");
+  })
+  .catch((err) => logLine("Der Compiler konnte nicht geladen werden: " + (err && err.message || err), "error"));
+</script>
+</body>
+</html>
