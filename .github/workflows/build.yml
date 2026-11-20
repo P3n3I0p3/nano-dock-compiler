@@ -19,17 +19,6 @@ jobs:
       - name: Werkzeuge
         run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake ninja-build ccache
 
-      # Private Repos laufen auf kleineren Rechnern (2 Kerne, 7 GB RAM). Das Linken mit LTO
-      # braucht mehr Speicher, deshalb 24 GB Auslagerungsspeicher auf der zweiten Platte.
-      - name: Auslagerungsspeicher
-        run: |
-          sudo swapoff -a || true
-          sudo fallocate -l 24G /mnt/swapfile
-          sudo chmod 600 /mnt/swapfile
-          sudo mkswap /mnt/swapfile
-          sudo swapon /mnt/swapfile
-          nproc; free -h; df -h / /mnt
-
       # Zwischenspeicher für übersetzte Dateien: spätere Läufe sind viel schneller,
       # auch wenn der vorige Lauf fehlgeschlagen ist
       - uses: actions/cache/restore@v4
@@ -45,7 +34,6 @@ jobs:
           export CCACHE_DIR=$HOME/.cache/ccache
           ./build.sh
           ccache -s
-          free -h
 
       - uses: actions/cache/save@v4
         if: always()
