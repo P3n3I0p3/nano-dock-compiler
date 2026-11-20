@@ -3,7 +3,7 @@
   "short_name": "Penelope",
   "description": "Arduino-Nano-Programme schreiben und kompilieren, direkt im Browser, auch offline.",
   "lang": "de",
-  "start_url": "./",
+  "start_url": "./?ide=penelope",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",

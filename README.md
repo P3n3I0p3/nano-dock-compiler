@@ -17,11 +17,11 @@ Programm (`llvm.wasm`). Das hält die Datei klein.
 ## Browser-IDE
 
 Im Ordner [`web/`](web/README.md) liegt die IDE, die diesen Compiler im Browser nutzt
-(Penelope IDE, mit `?ide=ada` die Ada Lovelace IDE, mit `?ide=bitbruecke` die Bitbrücke IDE mit dem Maskottchen Bit). GitHub Actions baut daraus den fertigen
+(Standard: die Bitbrücke IDE mit dem Maskottchen Bit; mit `?ide=penelope` die Penelope IDE, mit `?ide=ada` die Ada Lovelace IDE). GitHub Actions baut daraus den fertigen
 Ordner `ide/`, der auf jedem einfachen Webserver läuft.
 
 **Zum Testen** liegt die IDE nach jedem grünen Lauf auf GitHub Pages:
-<https://p3n3i0p3.github.io/nano-dock-compiler/> (Ada Lovelace IDE: `?ide=ada` anhängen, Bitbrücke IDE: `?ide=bitbruecke`).
+<https://p3n3i0p3.github.io/nano-dock-compiler/> (Bitbrücke IDE; Penelope IDE: `?ide=penelope` anhängen, Ada Lovelace IDE: `?ide=ada`).
 
 ## Ablauf
 

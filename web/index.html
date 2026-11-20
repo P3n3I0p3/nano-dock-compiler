@@ -1,23 +1,24 @@
 <!doctype html>
-<html lang="de" data-theme="penelope">
+<html lang="de" data-theme="bitbruecke">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Penelope IDE">
-<meta name="theme-color" content="#006b6f">
-<title>Penelope IDE</title>
+<meta name="apple-mobile-web-app-title" content="Bitbrücke IDE">
+<meta name="theme-color" content="#1E3A8A">
+<title>Bitbrücke IDE</title>
 <link rel="icon" href="bit/icon-192.png">
 <link rel="apple-touch-icon" href="bit/icon-180.png">
-<link rel="manifest" href="manifest-penelope.webmanifest" id="manifest">
+<link rel="manifest" href="manifest-bitbruecke.webmanifest" id="manifest">
 <script>
-  // Penelope IDE (Standard), Ada Lovelace IDE mit ?ide=ada, Bitbrücke IDE mit ?ide=bitbruecke
+  // Bitbrücke IDE (Standard), Penelope IDE mit ?ide=penelope, Ada Lovelace IDE mit ?ide=ada
   (function () {
     const themes = {
+      penelope: { title: "Penelope IDE", color: "#006b6f" },
       ada: { title: "Ada Lovelace IDE", color: "#a3161f" },
-      bitbruecke: { title: "Bitbrücke IDE", color: "#1e3a8a" },
+      bitbruecke: { title: "Bitbrücke IDE", color: "#1E3A8A" },
     };
-    const m = location.search.match(/[?&]ide=(ada|bitbruecke)\b/);
+    const m = location.search.match(/[?&]ide=(penelope|ada|bitbruecke)\b/);
     if (!m) return;
     const t = themes[m[1]];
     document.documentElement.dataset.theme = m[1];
@@ -360,7 +361,7 @@
 <script>
 const HEX_NAME = "SKETCH.HEX";
 const IDE_NAME = document.title;
-const THEME = document.documentElement.dataset.theme || "penelope";
+const THEME = document.documentElement.dataset.theme || "bitbruecke";
 const STORE_CODE = THEME + "-ide-code";   // jede IDE merkt sich ihren eigenen Sketch
 const STORE_NAME = THEME + "-ide-name";
 document.getElementById("brand").textContent = IDE_NAME;

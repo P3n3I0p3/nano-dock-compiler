@@ -1,6 +1,6 @@
 # Browser-IDE
 
-Die Penelope IDE (bzw. Ada Lovelace IDE mit `?ide=ada`, Bitbrücke IDE mit `?ide=bitbruecke`), auch offline nutzbar, mit eingebautem Compiler: Der Sketch wird
+Die Bitbrücke IDE (Standard; Penelope IDE mit `?ide=penelope`, Ada Lovelace IDE mit `?ide=ada`), auch offline nutzbar, mit eingebautem Compiler: Der Sketch wird
 **komplett im Browser** übersetzt, mit `llvm.wasm` aus diesem Repo. Kein Compiler-Server, kein
 Jetson, kein Internet nach dem ersten Laden.
 
@@ -71,7 +71,7 @@ im Arbeitsspeicher bleibt dazwischen erhalten.
 
 ## Bitbrücke IDE und Maskottchen Bit
 
-Mit `?ide=bitbruecke` erscheint die IDE in den Farben der Setkarte: **Tiefblau `#1E3A8A`** und
+Ohne Zusatz in der Adresse (oder mit `?ide=bitbruecke`) erscheint die IDE in den Farben der Setkarte: **Tiefblau `#1E3A8A`** und
 **Signal-Orange `#F97316`** (keine weiteren Markenfarben). Standardlogo ist Bit, der Tablet und
 Mikrocontroller hält: `bit/logo.jpg` ist die Originaldatei, unverändert, oben rechts groß auf weißer Fläche (App-Symbole `bit/icon-*.png` daraus).
 
