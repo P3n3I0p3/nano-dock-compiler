@@ -20,6 +20,9 @@ Im Ordner [`web/`](web/README.md) liegt die IDE, die diesen Compiler im Browser 
 (Penelope IDE, mit `?ide=ada` die Ada Lovelace IDE). GitHub Actions baut daraus den fertigen
 Ordner `ide/`, der auf jedem einfachen Webserver läuft.
 
+**Zum Testen** liegt die IDE nach jedem grünen Lauf auf GitHub Pages:
+<https://p3n3i0p3.github.io/nano-dock-compiler/> (Ada Lovelace IDE: `?ide=ada` anhängen).
+
 ## Ablauf
 
 Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem eigenen Computer:
@@ -34,6 +37,7 @@ Alles läuft in **GitHub Actions** auf abgeschotteten Rechnern, nichts auf einem
 3. **IDE:** `web/package.sh` stellt den Ordner `ide/` zusammen (Compiler, Arduino-Dateien, Seite),
    `web/test-node.mjs` prüft ihn unter Node.js mit demselben Code wie im Browser.
 4. **release** (bei Tags `v*`): `llvm.wasm` und `nano-dock-ide.zip` als Download.
+5. **pages** (bei `main`): die fertige IDE als Testseite auf GitHub Pages.
 
 ## Anpassungen an LLVM für WebAssembly
 

@@ -118,3 +118,27 @@ jobs:
         run: |
           (cd ide && zip -r ../dist/nano-dock-ide.zip .)
           gh release create "${GITHUB_REF_NAME}" dist/* --repo "${GITHUB_REPOSITORY}" --title "${GITHUB_REF_NAME}" --notes "LLVM mit AVR als WebAssembly und die Browser-IDE, getestet mit den Nano-Sketches."
+
+  # Testseite: die fertige IDE auf GitHub Pages, zum Ausprobieren am iPad
+  # (https://p3n3i0p3.github.io/nano-dock-compiler/). Später kommt die IDE auf einen
+  # eigenen Webspace (z. B. IONOS); dafür reicht der Inhalt von nano-dock-ide.
+  pages:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nano-dock-ide
+          path: ide
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ide
+      - id: deploy
+        uses: actions/deploy-pages@v4
