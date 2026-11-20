@@ -33,7 +33,16 @@ CXX=(-std=gnu++11 -fno-exceptions -fno-rtti -fno-threadsafe-statics)
 
 compile() {   # $1 Quelle (Pfad im virtuellen Dateisystem), $2 Objektdatei
   local lang=()
-  case "$1" in *.cpp) lang=("${CXX[@]}");; *.c) lang=(-std=gnu11);; *.S) lang=(-x assembler-with-cpp);; esac
+  case "$1" in
+    *.cpp) lang=("${CXX[@]}");;
+    *.c)   lang=(-std=gnu11);;
+    *.S)   # Assembler in zwei Schritten: clang startet für den zweiten Schritt (cc1as) sonst einen
+           # eigenen Prozess, und das kann WASI nicht. Ergebnis ist identisch (am Mac geprüft).
+           local pre="/w/$W/tmp/$(basename "$1").s"
+           run clang "${FLAGS[@]}" -E -x assembler-with-cpp "$1" -o "$pre"
+           run clang -cc1as -triple avr -target-cpu atmega328p -filetype obj -mrelocation-model static -o "$2" "$pre"
+           return;;
+  esac
   run clang "${FLAGS[@]}" "${lang[@]}" -c "$1" -o "$2"
 }
 

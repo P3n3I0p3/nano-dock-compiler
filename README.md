@@ -39,8 +39,13 @@ Zusätzlich zum WASI-Patch von YoWASP ändert `build.sh` drei Kleinigkeiten im Q
   den letzten `errno`-Wert zurück, wodurch clang bei manchen Dateien mit „IO failure on output
   stream“ abbrach.
 
-clang braucht außerdem einen Ordner `/tmp` für Zwischendateien (z. B. bei Assembler-Dateien `.S`);
-der Test stellt ihn bereit, die IDE muss das im virtuellen Dateisystem ebenso tun.
+Hinweise für die IDE (im Test genauso gelöst):
+
+- clang braucht einen Ordner `/tmp` für Zwischendateien.
+- WebAssembly kann keine weiteren Prozesse starten. C und C++ übersetzt clang trotzdem in einem
+  Durchgang, Assembler-Dateien (`.S`) aber in zwei Schritten: erst `clang -E -x assembler-with-cpp`,
+  dann `clang -cc1as -triple avr -target-cpu atmega328p -filetype obj`. Im Arduino-Core betrifft
+  das nur `wiring_pulse.S`, der ohnehin vorab übersetzt mitgeliefert wird.
 
 Damit spätere Läufe schneller sind, speichert GitHub Actions die übersetzten Dateien mit `ccache`.
 
