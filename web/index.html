@@ -7,14 +7,22 @@
 <meta name="apple-mobile-web-app-title" content="Penelope IDE">
 <meta name="theme-color" content="#006b6f">
 <title>Penelope IDE</title>
+<link rel="icon" href="bit/icon.png" id="icon">
 <script>
-  // Penelope IDE (Standard) oder Ada Lovelace IDE mit ?ide=ada in der Adresse
-  if (/[?&]ide=ada\b/.test(location.search)) {
-    document.documentElement.dataset.theme = "ada";
-    document.title = "Ada Lovelace IDE";
-    document.querySelector('meta[name="theme-color"]').content = "#a3161f";
-    document.querySelector('meta[name="apple-mobile-web-app-title"]').content = "Ada Lovelace IDE";
-  }
+  // Penelope IDE (Standard), Ada Lovelace IDE mit ?ide=ada, Bitbrücke IDE mit ?ide=bitbruecke
+  (function () {
+    const themes = {
+      ada: { title: "Ada Lovelace IDE", color: "#a3161f" },
+      bitbruecke: { title: "Bitbrücke IDE", color: "#1e3a8a" },
+    };
+    const m = location.search.match(/[?&]ide=(ada|bitbruecke)\b/);
+    if (!m) return;
+    const t = themes[m[1]];
+    document.documentElement.dataset.theme = m[1];
+    document.title = t.title;
+    document.querySelector('meta[name="theme-color"]').content = t.color;
+    document.querySelector('meta[name="apple-mobile-web-app-title"]').content = t.title;
+  })();
 </script>
 <style>
   :root {
@@ -58,6 +66,23 @@
     --status: #82111a;
     --accent-soft: #fbe8ea;
     --selection: rgba(212,42,55,.22);
+  }
+  /* Bitbrücke IDE: Tiefblau und Signal-Orange, mit dem Maskottchen Bit */
+  :root[data-theme="bitbruecke"] {
+    --bar: #1e3a8a;
+    --bar-dark: #172e6e;
+    --round: #f97316;
+    --round-hover: #fb8a3c;
+    --status: #172e6e;
+    --accent-soft: #fff1e6;
+    --selection: rgba(249,115,22,.22);
+    --out-bg: #111a33;
+    --out-head: #1a2547;
+    --out-info: #a5b4d4;
+    --hl-type: #1e3a8a;
+    --hl-const: #1e3a8a;
+    --hl-func: #ea580c;
+    --hl-string: #2f4fb0;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -178,9 +203,36 @@
   .primary:hover { background: var(--round-hover); }
   .link { margin-top: 10px; padding: 8px; color: #59646a; }
 
+  /* Maskottchen Bit (nur in der Bitbrücke IDE) */
+  .brand-bit, .bit, .sheet .bit-sheet { display: none; }
+  :root[data-theme="bitbruecke"] .brand { display: inline-flex; align-items: center; gap: 8px; }
+  :root[data-theme="bitbruecke"] .brand-bit { display: block; height: 26px; }
+  :root[data-theme="bitbruecke"] .brand small { font-weight: 500; opacity: .75; }
+  :root[data-theme="bitbruecke"] .output { position: relative; }
+  :root[data-theme="bitbruecke"] .log { padding-right: 120px; }
+  :root[data-theme="bitbruecke"] .bit {
+    display: block; position: absolute; right: 14px; bottom: 10px; height: min(96px, 70%);
+    pointer-events: none; transform-origin: 50% 100%;
+  }
+  :root[data-theme="bitbruecke"] .sheet .check { display: none; }
+  :root[data-theme="bitbruecke"] .sheet .bit-sheet { display: block; height: 110px; margin: 0 auto 8px; }
+  .bit[data-state="denken"] { animation: bit-wiegen 1.6s ease-in-out infinite; }
+  .bit[data-state="jubeln"] { animation: bit-springen .5s ease-out 3; }
+  .bit[data-state="fehler"] { animation: bit-wackeln .4s ease-in-out 2; }
+  .bit[data-state="schlafen"] { animation: bit-atmen 3s ease-in-out infinite; }
+  .bit[data-state="halten"] { animation: bit-wiegen 1s ease-in-out infinite; }
+  @keyframes bit-wiegen { 50% { transform: rotate(-4deg); } }
+  @keyframes bit-springen { 40% { transform: translateY(-14px); } }
+  @keyframes bit-wackeln { 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+  @keyframes bit-atmen { 50% { transform: scale(1.03, .97); } }
+  @media (prefers-reduced-motion: reduce) { .bit { animation: none !important; } }
+
   @media (max-width: 700px) {
     .brand, .tool .label { display: none; }
     .output { height: 34%; }
+    :root[data-theme="bitbruecke"] .brand { display: none; }
+    :root[data-theme="bitbruecke"] .bit { height: 64px; }
+    :root[data-theme="bitbruecke"] .log { padding-right: 76px; }
   }
 </style>
 </head>
@@ -217,7 +269,7 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="9" rx="1"/><path d="M9 11v4a3 3 0 0 0 6 0v-4"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
     Arduino Nano
   </div>
-  <div class="brand" id="brand">Penelope IDE</div>
+  <div class="brand"><img class="brand-bit" src="bit/bit_winken.png" alt=""><span id="brand">Penelope IDE</span></div>
 </header>
 
 <nav class="tabs"><div class="tab" id="tab" title="Antippen zum Umbenennen"><span id="sketch-name">sketch</span>.ino</div></nav>
@@ -238,6 +290,7 @@
     <button id="clear" title="Ausgabe leeren">Leeren</button>
   </div>
   <div class="log" id="log" role="log" aria-live="polite"></div>
+  <img class="bit" id="bit" src="bit/bit_winken.png" data-state="winken" alt="">
 </section>
 
 <footer class="status">
@@ -247,6 +300,7 @@
 
 <div class="dialog" id="dialog" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+    <img class="bit-sheet" src="bit/bit_halten.png" alt="">
     <div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"/></svg></div>
     <h2 id="dialog-title">Bereit zum Hochladen</h2>
     <p>Speichere das Programm jetzt auf dem Laufwerk <b>NANO DOCK</b>. Das Dock flasht es danach automatisch auf den Nano.</p>
@@ -264,6 +318,28 @@ const THEME = document.documentElement.dataset.theme || "penelope";
 const STORE_CODE = THEME + "-ide-code";   // jede IDE merkt sich ihren eigenen Sketch
 const STORE_NAME = THEME + "-ide-name";
 document.getElementById("brand").textContent = IDE_NAME;
+if (THEME === "bitbruecke") {
+  document.getElementById("brand").innerHTML = "Bitbrücke <small>Vom Tablet zum Mikrocontroller</small>";
+}
+
+// --- Maskottchen Bit (Bitbrücke IDE) ---
+// Zustände wie die Bilder in bit/: winken, denken, halten, jubeln, fehler, schlafen.
+// Animationen später: Datei bit/anim/bit_<zustand>.webm (oder .png als APNG) ablegen und hier
+// in BIT_ANIM eintragen, z. B. BIT_ANIM.jubeln = "bit/anim/bit_jubeln.png".
+const BIT_ANIM = {};
+let bitTimer = null;
+function setBit(state) {
+  if (THEME !== "bitbruecke") return;
+  const el = document.getElementById("bit");
+  el.dataset.state = "";
+  void el.offsetWidth;                       // CSS-Animation neu starten
+  el.src = BIT_ANIM[state] || `bit/bit_${state}.png`;
+  el.dataset.state = state;
+  clearTimeout(bitTimer);
+  // nach zwei Minuten ohne Aktion schläft Bit ein
+  if (state !== "denken" && state !== "halten") bitTimer = setTimeout(() => setBit("schlafen"), 120000);
+}
+document.addEventListener("keydown", () => { if (document.getElementById("bit").dataset.state === "schlafen") setBit("winken"); });
 
 // Compiler im Browser (llvm.wasm im Web Worker). Wird gleich beim Öffnen im Hintergrund geladen,
 // damit der erste Klick auf "Überprüfen" nicht warten muss.
@@ -567,6 +643,7 @@ async function compile(forUpload) {
   hexText = null;
   errorLines.clear();
   logLine(forUpload ? "Sketch wird kompiliert …" : "Sketch wird überprüft …", "info");
+  setBit("denken");
   try {
     const compiler = await compilerReady;
     const data = await compiler.compile(codeEl.value, (text) => setBusy(true, text));
@@ -580,13 +657,16 @@ async function compile(forUpload) {
     if (data.ok) {
       hexText = data.hex;
       logLine(forUpload ? "Kompilierung abgeschlossen. Jetzt auf das Dock speichern." : "Kompilierung abgeschlossen.", "ok");
+      setBit(forUpload ? "halten" : "jubeln");
       if (forUpload) openDialog();
     } else {
+      setBit("fehler");
       logLine("Kompilierung fehlgeschlagen. Tippe auf eine Fehlermeldung, um zur Zeile zu springen.", "error");
       if (errorLines.size) gotoLine(Math.min(...errorLines));
     }
   } catch (err) {
     logLine("Der Compiler konnte nicht gestartet werden: " + (err && err.message || err), "error");
+    setBit("fehler");
   } finally {
     setBusy(false);
   }
@@ -596,7 +676,7 @@ $("upload").addEventListener("click", () => compile(true));
 
 // --- Aufs Dock speichern ---
 function openDialog() { $("dialog").hidden = false; $("dock-save").focus(); }
-function closeDialog() { $("dialog").hidden = true; }
+function closeDialog() { $("dialog").hidden = true; if ($("bit").dataset.state === "halten") setBit("winken"); }
 $("dock-cancel").addEventListener("click", closeDialog);
 $("dialog").addEventListener("click", (e) => { if (e.target.id === "dialog") closeDialog(); });
 
@@ -629,6 +709,7 @@ $("dock-save").addEventListener("click", async () => {
   if (!hexText) return closeDialog();
   closeDialog();
   const result = await shareOrDownload(new File([hexText], HEX_NAME, { type: "application/octet-stream" }));
+  setBit(result === "aborted" ? "winken" : "jubeln");
   if (result === "shared") {
     logLine("Gespeichert. Achte auf die LED am Dock: orange = flasht, grün = fertig.", "ok");
   } else if (result === "downloaded") {

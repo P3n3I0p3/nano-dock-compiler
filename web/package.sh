@@ -26,6 +26,7 @@ cp test/avr5_lld.ld $S/avr5_lld.ld
 tar --format=ustar -C $S -cf - . | gzip -9 > $OUT/sysroot.tar.gz
 gzip -9 -c dist/llvm.wasm > $OUT/llvm.wasm.gz
 cp web/index.html web/nanodock-compiler.js web/compiler-worker.js web/compiler-core.js web/wasi.js $OUT/
+cp -r web/bit $OUT/bit
 
 {
   echo "Lizenzen der Bestandteile dieser IDE"

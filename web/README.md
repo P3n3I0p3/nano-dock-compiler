@@ -1,6 +1,6 @@
 # Browser-IDE
 
-Die Penelope IDE (bzw. Ada Lovelace IDE mit `?ide=ada`) mit eingebautem Compiler: Der Sketch wird
+Die Penelope IDE (bzw. Ada Lovelace IDE mit `?ide=ada`, Bitbrücke IDE mit `?ide=bitbruecke`) mit eingebautem Compiler: Der Sketch wird
 **komplett im Browser** übersetzt, mit `llvm.wasm` aus diesem Repo. Kein Compiler-Server, kein
 Jetson, kein Internet nach dem ersten Laden.
 
@@ -65,3 +65,23 @@ im Arbeitsspeicher bleibt dazwischen erhalten.
 - Android: direkt per USB aufs Dock (WebUSB-Weg aus `nano-dock-android`)
 - Bibliotheken (Servo, Display, NeoPixel) im Sysroot
 - Messung auf echten Schul-iPads: Ladezeit, Kompilierzeit, Speicherbedarf
+
+## Bitbrücke IDE und Maskottchen Bit
+
+Mit `?ide=bitbruecke` erscheint die IDE in Tiefblau (`#1E3A8A`) und Signal-Orange (`#F97316`).
+Unten rechts in der Ausgabe zeigt **Bit**, was gerade passiert:
+
+| Zustand | Bild | Wann |
+|---|---|---|
+| winken | `bit/bit_winken.png` | IDE bereit |
+| denken | `bit/bit_denken.png` | Kompilieren läuft (wiegt sich) |
+| halten | `bit/bit_halten.png` | Hochladen, Dialog „Auf Dock speichern“ |
+| jubeln | `bit/bit_jubeln.png` | Kompiliert bzw. auf das Dock gespeichert (springt) |
+| fehler | `bit/bit_fehler.png` | Fehler im Sketch (wackelt) |
+| schlafen | `bit/bit_schlafen.png` | zwei Minuten ohne Aktion |
+
+Die Bilder entstehen aus `design/maskottchen/posen/` im Projektordner (240 px hoch).
+Die Bewegungen sind vorerst einfache CSS-Animationen. **Echte Animationen** als Datei nach
+`bit/anim/` legen und in `index.html` in `BIT_ANIM` eintragen, z. B.
+`BIT_ANIM.jubeln = "bit/anim/bit_jubeln.png"` (APNG) – Vorgaben in `design/animationen/README.md`.
+Penelope IDE und Ada Lovelace IDE zeigen Bit nicht.
