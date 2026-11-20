@@ -8,7 +8,11 @@ const PREFIX = "nanodock-ide-";
 const CACHE = PREFIX + VERSION;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // cache: "reload" holt jede Datei frisch vom Server, nicht aus dem HTTP-Zwischenspeicher des
+  // Browsers (GitHub Pages erlaubt 10 Minuten Zwischenspeichern, sonst käme die alte Version).
+  event.waitUntil(caches.open(CACHE)
+    .then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
