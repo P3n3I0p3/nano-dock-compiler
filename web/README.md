@@ -71,7 +71,7 @@ im Arbeitsspeicher bleibt dazwischen erhalten.
 ## Noch offen
 
 - Android: direkt per USB aufs Dock (WebUSB-Weg aus `nano-dock-android`)
-- Messung auf älteren Schul-iPads (3 GB RAM) und Android-Tablets; getestet sind bisher iPad Pro 12,9" (6. Gen.), iPad Pro (3. Gen.) und iPad Air (4. Gen.), alle kompilieren Blink in etwa 1 s
+- Messung auf älteren Schul-iPads (3 GB RAM) und Android-Tablets; getestet sind bisher iPad Pro 12,9" (6. Gen.), iPad Pro (3. Gen.), iPad Air (4. Gen.) und iPad (A16), alle kompilieren Blink in etwa 1 s
 
 ## Bibliotheken
 
