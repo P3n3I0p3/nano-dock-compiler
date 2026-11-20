@@ -73,7 +73,7 @@ im Arbeitsspeicher bleibt dazwischen erhalten.
 
 Mit `?ide=bitbruecke` erscheint die IDE in den Farben der Setkarte: **Tiefblau `#1E3A8A`** und
 **Signal-Orange `#F97316`** (keine weiteren Markenfarben). Standardlogo ist Bit, der Tablet und
-Mikrocontroller hält (`bit/logo.png`, auch als App-Symbol).
+Mikrocontroller hält: `bit/logo.jpg` ist die Originaldatei, unverändert, oben rechts groß auf weißer Fläche (App-Symbole `bit/icon-*.png` daraus).
 
 - **Startbild:** Beim Öffnen winkt Bit (`bit/video/bit_oeffnen.mp4`) über der Wortmarke
   (`bit/wortmarke.jpg`). Es schließt, wenn die Animation zu Ende und der Compiler geladen ist;
@@ -82,7 +82,7 @@ Mikrocontroller hält (`bit/logo.png`, auch als App-Symbol).
   - `bit/video/bit_kompiliert.mp4` („erfolgreich kompiliert“) nach erfolgreichem Überprüfen (✓)
   - `bit/video/bit_erfolg.mp4` („Upload successful“) nach dem Speichern aufs Dock
   - `bit/video/bit_fehler.mp4` wenn der Sketch Fehler hat
-- **Bit unten rechts** in der Ausgabe zeigt den Zustand als Standbild:
+- **Bit unten rechts** in der Ausgabe (auf weißer Karte, damit er sich vom Blau abhebt) zeigt den Zustand als Standbild:
 
 | Zustand | Bild | Wann |
 |---|---|---|

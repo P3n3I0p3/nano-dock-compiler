@@ -212,13 +212,16 @@
 
   /* Maskottchen Bit (nur in der Bitbrücke IDE) */
   .brand-bit, .bit, .sheet .bit-sheet { display: none; }
-  :root[data-theme="bitbruecke"] .brand { display: inline-flex; align-items: center; gap: 8px; }
-  :root[data-theme="bitbruecke"] .brand-bit { display: block; height: 32px; padding: 2px 4px; background: #fff; border-radius: 8px; }
-  :root[data-theme="bitbruecke"] .brand small { font-weight: 500; opacity: .75; }
+  :root[data-theme="bitbruecke"] .brand { display: inline-flex; align-items: center; gap: 12px; font-size: 18px; }
+  /* Standardlogo genau wie geliefert (bit/logo.jpg), auf weißer Fläche, damit es gut erkennbar ist */
+  :root[data-theme="bitbruecke"] .brand-bit { display: block; height: 60px; padding: 3px 6px; background: #fff; border-radius: 10px; }
+  :root[data-theme="bitbruecke"] .brand small { font-size: 14px; font-weight: 500; opacity: .85; }
   :root[data-theme="bitbruecke"] .output { position: relative; }
-  :root[data-theme="bitbruecke"] .log { padding-right: 120px; }
+  :root[data-theme="bitbruecke"] .log { padding-right: 160px; }
+  /* Bit unten rechts auf weißer Karte, damit er sich vom blauen Hintergrund abhebt */
   :root[data-theme="bitbruecke"] .bit {
-    display: block; position: absolute; right: 14px; bottom: 10px; height: min(96px, 70%);
+    display: block; position: absolute; right: 14px; bottom: 12px; height: min(130px, 78%);
+    padding: 8px; background: #fff; border-radius: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.25);
     pointer-events: none; transform-origin: 50% 100%;
   }
   :root[data-theme="bitbruecke"] .sheet .check { display: none; }
@@ -252,9 +255,11 @@
   @media (max-width: 700px) {
     .brand, .tool .label { display: none; }
     .output { height: 34%; }
-    :root[data-theme="bitbruecke"] .brand { display: none; }
-    :root[data-theme="bitbruecke"] .bit { height: 64px; }
-    :root[data-theme="bitbruecke"] .log { padding-right: 76px; }
+    :root[data-theme="bitbruecke"] .brand { display: inline-flex; }
+    :root[data-theme="bitbruecke"] .brand span { display: none; }
+    :root[data-theme="bitbruecke"] .brand-bit { height: 44px; }
+    :root[data-theme="bitbruecke"] .bit { height: 84px; }
+    :root[data-theme="bitbruecke"] .log { padding-right: 104px; }
   }
 </style>
 </head>
@@ -291,7 +296,7 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="9" rx="1"/><path d="M9 11v4a3 3 0 0 0 6 0v-4"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
     Arduino Nano
   </div>
-  <div class="brand"><img class="brand-bit" src="bit/logo.png" alt=""><span id="brand">Penelope IDE</span></div>
+  <div class="brand"><img class="brand-bit" src="bit/logo.jpg" alt=""><span id="brand">Penelope IDE</span></div>
 </header>
 
 <nav class="tabs"><div class="tab" id="tab" title="Antippen zum Umbenennen"><span id="sketch-name">sketch</span>.ino</div></nav>
@@ -322,7 +327,7 @@
 
 <div class="dialog" id="dialog" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
-    <img class="bit-sheet" src="bit/logo.png" alt="">
+    <img class="bit-sheet" src="bit/logo.jpg" alt="">
     <div class="check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 6"/></svg></div>
     <h2 id="dialog-title">Bereit zum Hochladen</h2>
     <p>Speichere das Programm jetzt auf dem Laufwerk <b>NANO DOCK</b>. Das Dock flasht es danach automatisch auf den Nano.</p>
