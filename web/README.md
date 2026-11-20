@@ -68,7 +68,6 @@ im Arbeitsspeicher bleibt dazwischen erhalten.
 - Android: direkt per USB aufs Dock (WebUSB-Weg aus `nano-dock-android`)
 - Bibliotheken (Servo, Display, NeoPixel) im Sysroot
 - Messung auf älteren Schul-iPads (3 GB RAM) und Android-Tablets; getestet sind bisher iPad Pro 12,9" (6. Gen.), iPad Pro (3. Gen.) und iPad Air (4. Gen.), alle kompilieren Blink in etwa 1 s
-- Erfolgs-Animation ohne die Aufschrift „Upload successful“ für das reine Überprüfen
 
 ## Bitbrücke IDE und Maskottchen Bit
 
@@ -76,10 +75,12 @@ Mit `?ide=bitbruecke` erscheint die IDE in den Farben der Setkarte: **Tiefblau `
 **Signal-Orange `#F97316`** (keine weiteren Markenfarben). Standardlogo ist Bit, der Tablet und
 Mikrocontroller hält (`bit/logo.png`, auch als App-Symbol).
 
-- **Startbild:** Beim Öffnen erscheint die Wortmarke (`bit/wortmarke.jpg`), bis der Compiler
-  geladen ist (mindestens 1,5 s, Antippen schließt).
+- **Startbild:** Beim Öffnen winkt Bit (`bit/video/bit_oeffnen.mp4`) über der Wortmarke
+  (`bit/wortmarke.jpg`). Es schließt, wenn die Animation zu Ende und der Compiler geladen ist;
+  Antippen schließt sofort.
 - **Animationen als Popup in der Mitte**, Antippen schließt, sonst schließt es am Ende von selbst:
-  - `bit/video/bit_erfolg.mp4` nach erfolgreichem Überprüfen und nach dem Speichern aufs Dock
+  - `bit/video/bit_kompiliert.mp4` („erfolgreich kompiliert“) nach erfolgreichem Überprüfen (✓)
+  - `bit/video/bit_erfolg.mp4` („Upload successful“) nach dem Speichern aufs Dock
   - `bit/video/bit_fehler.mp4` wenn der Sketch Fehler hat
 - **Bit unten rechts** in der Ausgabe zeigt den Zustand als Standbild:
 

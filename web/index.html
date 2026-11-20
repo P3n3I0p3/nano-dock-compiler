@@ -234,6 +234,7 @@
   .overlay .caption.err { color: #1E3A8A; }
   .overlay .hint { margin: 0; font-size: 13px; color: #6b7280; }
   .overlay .wordmark { display: block; width: min(360px, 80%); margin: 0 auto 6px; }
+  .overlay .wordmark.small { width: min(240px, 60%); margin-top: 8px; }
   .overlay .bar { height: 4px; margin: 12px auto 4px; width: 60%; border-radius: 2px; background: rgba(30,58,138,.12); overflow: hidden; }
   .overlay .bar span { display: block; height: 100%; width: 40%; background: #F97316; border-radius: 2px; animation: lade 1.2s ease-in-out infinite; }
   @keyframes lade { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
@@ -333,7 +334,8 @@
 <!-- Bitbrücke IDE: Startbild beim Laden des Compilers -->
 <div class="overlay" id="splash" hidden>
   <div class="card">
-    <img class="wordmark" src="bit/wortmarke.jpg" alt="Bitbrücke – from tablet to microcontroller">
+    <video id="splash-video" muted playsinline preload="auto"></video>
+    <img class="wordmark small" src="bit/wortmarke.jpg" alt="Bitbrücke – from tablet to microcontroller">
     <div class="bar"><span></span></div>
     <p class="hint" id="splash-text">Compiler wird geladen …</p>
   </div>
@@ -406,15 +408,24 @@ document.getElementById("bitpop-video").addEventListener("ended", () => {
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeBitVideo(); });
 
-// Startbild, bis der Compiler geladen ist (mindestens 1,5 s, Antippen schließt)
-const splashShown = Date.now();
-function closeSplash() {
-  const el = document.getElementById("splash");
-  setTimeout(() => { el.hidden = true; }, Math.max(0, 1500 - (Date.now() - splashShown)));
+// Startbild: Bit winkt (bit/video/bit_oeffnen.mp4), bis die Animation zu Ende und der Compiler
+// geladen ist. Antippen schließt sofort.
+let splashVideoDone = false, splashCompilerDone = false;
+function maybeCloseSplash() {
+  if (splashVideoDone && splashCompilerDone) document.getElementById("splash").hidden = true;
 }
+function closeSplash() { splashCompilerDone = true; maybeCloseSplash(); }
 if (THEME === "bitbruecke") {
-  document.getElementById("splash").hidden = false;
-  document.getElementById("splash").addEventListener("click", () => { document.getElementById("splash").hidden = true; });
+  const splash = document.getElementById("splash"), sv = document.getElementById("splash-video");
+  splash.hidden = false;
+  splash.addEventListener("click", () => { splash.hidden = true; sv.pause(); });
+  const videoDone = () => { splashVideoDone = true; maybeCloseSplash(); };
+  sv.addEventListener("ended", videoDone);
+  sv.addEventListener("error", videoDone);
+  sv.src = "bit/video/bit_oeffnen.mp4";
+  sv.play().catch(videoDone);              // falls der Browser nicht automatisch abspielt
+} else {
+  splashVideoDone = true;
 }
 
 // Compiler im Browser (llvm.wasm im Web Worker). Wird gleich beim Öffnen im Hintergrund geladen,
@@ -735,7 +746,7 @@ async function compile(forUpload) {
       logLine(forUpload ? "Kompilierung abgeschlossen. Jetzt auf das Dock speichern." : "Kompilierung abgeschlossen.", "ok");
       setBit(forUpload ? "halten" : "jubeln");
       if (forUpload) openDialog();
-      else showBitVideo("erfolg", "Kompiliert! Der Sketch ist bereit für den Nano.");
+      else showBitVideo("kompiliert", "Kompiliert! Der Sketch ist bereit für den Nano.");
     } else {
       setBit("fehler");
       showBitVideo("fehler", "Da stimmt noch etwas nicht. Die rote Zeile zeigt, wo.");
