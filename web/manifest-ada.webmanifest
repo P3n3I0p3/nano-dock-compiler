@@ -1,0 +1,16 @@
+{
+  "name": "Ada Lovelace IDE",
+  "short_name": "Ada IDE",
+  "description": "Arduino-Nano-Programme schreiben und kompilieren, direkt im Browser, auch offline.",
+  "lang": "de",
+  "start_url": "./?ide=ada",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#a3161f",
+  "icons": [
+    { "src": "bit/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "bit/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "bit/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Baut den fertigen IDE-Ordner (ide/) für einen beliebigen Webserver:
-#   index.html, *.js, llvm.wasm.gz (Compiler), sysroot.tar.gz (Arduino-Dateien), LIZENZEN.txt
+#   index.html, *.js, llvm.wasm.gz (Compiler), sysroot.tar.gz (Arduino-Dateien), LIZENZEN.txt,
+#   bit/ (Maskottchen, Logo, Animationen), Manifeste und sw.js für den Offline-Modus
 # Läuft in GitHub Actions nach test/test.sh und nutzt dessen Zwischenergebnisse:
 # die Bibliotheken ohne Debug-Infos und den mit dem WebAssembly-Compiler übersetzten Arduino-Core.
 set -euo pipefail
@@ -27,6 +28,7 @@ tar --format=ustar -C $S -cf - . | gzip -9 > $OUT/sysroot.tar.gz
 gzip -9 -c dist/llvm.wasm > $OUT/llvm.wasm.gz
 cp web/index.html web/nanodock-compiler.js web/compiler-worker.js web/compiler-core.js web/wasi.js $OUT/
 cp -r web/bit $OUT/bit
+cp web/manifest-*.webmanifest $OUT/
 
 {
   echo "Lizenzen der Bestandteile dieser IDE"
@@ -43,4 +45,9 @@ cp -r web/bit $OUT/bit
 } > $OUT/LIZENZEN.txt
 
 rm -rf $S
+
+# Offline-Modus: sw.js bekommt die Version (Git-Commit) und die Liste aller Dateien der IDE
+VERSION=$(git rev-parse --short=10 HEAD 2>/dev/null || date +%Y%m%d%H%M%S)
+FILES=$(cd $OUT && find . -type f ! -name LIZENZEN.txt | sed 's#^\./##' | sort | awk 'BEGIN { printf "[\"./\"" } { printf ", \"%s\"", $0 } END { printf "]" }')
+VERSION="$VERSION" FILES="$FILES" perl -pe 's/__VERSION__/$ENV{VERSION}/; s/__FILES__/$ENV{FILES}/' web/sw.js > $OUT/sw.js
 ls -la $OUT
