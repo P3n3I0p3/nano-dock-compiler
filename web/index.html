@@ -240,6 +240,8 @@
   .overlay .card { width: min(560px, 100%); background: #fff; border-radius: 16px; padding: 18px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.3); cursor: pointer; }
   .overlay video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px;
     -webkit-mask-image: radial-gradient(ellipse at center, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse at center, #000 62%, transparent 100%); }
+  /* hochkant gedrehte Animationen (z. B. bit_bibliothek) als Quadrat statt 16:9 */
+  .overlay video[data-shape="square"] { aspect-ratio: 1 / 1; width: min(340px, 100%); margin: 0 auto; }
   .overlay .caption { margin: 10px 0 2px; font-weight: 700; font-size: 17px; color: #1E3A8A; }
   .overlay .caption.err { color: #1E3A8A; }
   .overlay .hint { margin: 0; font-size: 13px; color: #6b7280; }
@@ -406,6 +408,7 @@ function setBit(state) {
 document.addEventListener("keydown", () => { if (document.getElementById("bit").dataset.state === "schlafen") setBit("winken"); });
 
 // Animation mittig als Popup: "erfolg" oder "fehler" (Videos in bit/video/)
+const BIT_VIDEO_SQUARE = new Set(["bibliothek"]);   // Videos im Format 1:1
 let bitPopId = 0;                            // damit ein altes "ended" kein neues Popup schließt
 function showBitVideo(name, caption) {
   if (THEME !== "bitbruecke") return;
@@ -413,6 +416,7 @@ function showBitVideo(name, caption) {
   const pop = document.getElementById("bitpop"), video = document.getElementById("bitpop-video");
   document.getElementById("bitpop-caption").textContent = caption;
   video.src = `bit/video/bit_${name}.mp4`;
+  video.dataset.shape = BIT_VIDEO_SQUARE.has(name) ? "square" : "";
   pop.hidden = false;
   video.currentTime = 0;
   video.play().catch(() => {});
@@ -776,8 +780,19 @@ async function compile(forUpload) {
       if (forUpload) openDialog();
       else showBitVideo("kompiliert", "Kompiliert! Der Sketch ist bereit für den Nano.");
     } else {
-      setBit("fehler");
-      showBitVideo("fehler", "Da stimmt noch etwas nicht. Die rote Zeile zeigt, wo.");
+      // Fehlt eine Bibliothek ("fatal error: 'Foo.h' file not found"), liegt es nicht am Sketch:
+      // freundliche Meldung und eigene Animation statt "Error"
+      const missing = (data.log || "").match(/fatal error: '([^']+)' file not found/);
+      if (missing) {
+        const lib = missing[1].replace(/\.(h|hpp)$/, "");
+        setBit("fehler");
+        showBitVideo("bibliothek", `Tut mir leid, die Bibliothek „${lib}“ wird noch nicht unterstützt.`);
+        logLine(`Die Bibliothek „${lib}“ (${missing[1]}) ist in dieser IDE noch nicht eingebaut. ` +
+                "Welche es gibt, zeigt Beispiele → Bibliotheken.", "error");
+      } else {
+        setBit("fehler");
+        showBitVideo("fehler", "Da stimmt noch etwas nicht. Die rote Zeile zeigt, wo.");
+      }
       logLine("Kompilierung fehlgeschlagen. Tippe auf eine Fehlermeldung, um zur Zeile zu springen.", "error");
       if (errorLines.size) gotoLine(Math.min(...errorLines));
     }

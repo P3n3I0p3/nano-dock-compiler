@@ -75,6 +75,14 @@ const line = r.log.match(/sketch\.ino:(\d+):\d+:\s*error/);
 check("Fehlermeldung", !r.ok && line && +line[1] === 6, line ? `Fehler in Zeile ${line[1]} erkannt` : "keine Zeile gefunden: " + r.log);
 console.log(r.log);
 
+// 5. Nicht eingebaute Bibliothek: die IDE erkennt sie an "fatal error: '….h' file not found"
+r = await compiler.compile(`#include <GibtEsNicht.h>
+void setup() {}
+void loop() {}
+`);
+const lib = r.log.match(/fatal error: '([^']+)' file not found/);
+check("Fehlende Bibliothek", !r.ok && lib && lib[1] === "GibtEsNicht.h", lib ? `erkannt: ${lib[1]}` : "nicht erkannt: " + r.log);
+
 const out = ["### Browser-Compiler (Node.js)", "", "| Prüfung | Ergebnis |", "|---|---|", ...report, ""].join("\n");
 console.log(out);
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, out + "\n");

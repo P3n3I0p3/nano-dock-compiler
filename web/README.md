@@ -114,6 +114,9 @@ Mikrocontroller hält: `bit/logo.jpg` ist die Originaldatei, unverändert, oben 
   - `bit/video/bit_kompiliert.mp4` („erfolgreich kompiliert“) nach erfolgreichem Überprüfen (✓)
   - `bit/video/bit_erfolg.mp4` („Upload successful“) nach dem Speichern aufs Dock
   - `bit/video/bit_fehler.mp4` wenn der Sketch Fehler hat
+  - `bit/video/bit_bibliothek.mp4` („Tut mir leid, die Bibliothek … wird noch nicht unterstützt“), wenn der Sketch eine
+    Bibliothek einbindet, die nicht eingebaut ist (`fatal error: '….h' file not found`); hochkant gedreht, deshalb als
+    Quadrat zugeschnitten (`crop=1080:1700:0:150,pad=1700:1700:310:0:white,scale=720:720`)
 - **Bit unten rechts** in der Ausgabe (auf weißer Karte, damit er sich vom Blau abhebt) zeigt den Zustand als Standbild, beim Schlafen als Video in einer Schleife:
 
 | Zustand | Bild | Wann |
