@@ -119,7 +119,9 @@ export class Compiler {
     const step = async (text, tool, args) => {
       onStep(text);
       const r = await this.run(tool, args);
-      const out = (r.stderr + r.stdout).replace(/\/work\//g, "").trim();
+      // Der AVR-Startcode steht am Anfang des Flash, ein Einsprungpunkt _start ist nicht nötig
+      const out = (r.stderr + r.stdout).replace(/\/work\//g, "")
+        .replace(/^.*cannot find entry symbol _start.*\n?/m, "").trim();
       if (out) log.push(out);
       return r;
     };
