@@ -134,10 +134,10 @@ Mikrocontroller hält: `bit/logo.jpg` ist die Originaldatei, unverändert, oben 
 
 | Zustand | Bild | Wann |
 |---|---|---|
-| winken | `bit/bit_winken.png` | IDE bereit |
+| winken | `bit/bit_winken.png` | IDE bereit, nach erfolgreichem Überprüfen (✓) |
 | denken | `bit/bit_denken.png` | Kompilieren läuft (wiegt sich) |
 | halten | `bit/bit_halten.png` | Hochladen, Dialog „Auf Dock speichern“ |
-| jubeln | `bit/bit_jubeln.png` | Kompiliert bzw. auf das Dock gespeichert (springt) |
+| jubeln | `bit/bit_jubeln.png` | auf das Dock gespeichert (springt; das Bild zeigt „Upload successful“, deshalb nicht schon nach dem Überprüfen) |
 | fehler | `bit/bit_fehler.png` | Fehler im Sketch (wackelt) |
 | schlafen | `bit/video/bit_schlafen.mp4` (Standbild `bit/bit_schlafen.png`, falls das Video nicht startet) | zwei Minuten ohne Aktion |
 

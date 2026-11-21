@@ -799,7 +799,7 @@ async function compile(forUpload) {
     if (data.ok) {
       hexText = data.hex;
       logLine(forUpload ? "Kompilierung abgeschlossen. Jetzt auf das Dock speichern." : "Kompilierung abgeschlossen.", "ok");
-      setBit(forUpload ? "halten" : "jubeln");
+      setBit(forUpload ? "halten" : "winken");   // jubeln (Bild mit „Upload successful“) erst nach dem Speichern aufs Dock
       if (forUpload) openDialog();
       else showBitVideo("kompiliert", "Kompiliert! Der Sketch ist bereit für den Nano.");
     } else {
