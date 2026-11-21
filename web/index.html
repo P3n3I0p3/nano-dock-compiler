@@ -107,8 +107,9 @@
   .toolbar {
     display: flex; align-items: center; gap: 8px; padding: 8px 12px;
     padding-top: max(8px, env(safe-area-inset-top));
-    background: var(--bar); color: #fff; flex-wrap: wrap;
+    background: var(--bar); color: #fff; flex-wrap: nowrap; min-width: 0;
   }
+  .toolbar > * { flex-shrink: 0; }
   .round {
     width: 36px; height: 36px; border-radius: 50%; background: var(--round);
     display: grid; place-items: center; color: #fff; transition: background .15s;
@@ -125,7 +126,9 @@
     display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
     background: var(--bar-dark); border-radius: 6px; font-weight: 600; margin-left: 4px;
   }
-  .brand { margin-left: auto; font-weight: 700; letter-spacing: .02em; opacity: .95; white-space: nowrap; }
+  .brand { margin-left: auto; font-weight: 700; letter-spacing: .02em; opacity: .95; white-space: nowrap;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .toolbar > .brand { flex-shrink: 1; }
   .menu-wrap { position: relative; }
   .menu {
     position: absolute; top: 38px; left: 0; z-index: 20; min-width: 210px; padding: 6px;
@@ -261,6 +264,24 @@
   @keyframes bit-atmen { 50% { transform: scale(1.03, .97); } }
   @media (prefers-reduced-motion: reduce) { .bit { animation: none !important; } }
 
+  /* Leiste bleibt einzeilig: je schmaler, desto mehr fällt weg (Reihenfolge: Untertitel,
+     Beschriftungen der Knöpfe, Name, Board-Anzeige). iPad mini hochkant = 768 px. */
+  @media (max-width: 1180px) {
+    :root[data-theme="bitbruecke"] .brand small { display: none; }
+    :root[data-theme="bitbruecke"] .brand-bit { height: 52px; }
+  }
+  @media (max-width: 820px) {
+    :root[data-theme="bitbruecke"] .brand span { display: none; }   /* nur das Logo */
+  }
+  @media (max-width: 900px) {
+    .tool .label { display: none; }
+    .tool { padding: 0 9px; height: 36px; }
+    .toolbar { gap: 6px; }
+  }
+  @media (max-width: 480px) {
+    .board { display: none; }
+    .menu { position: fixed; top: 60px; left: 8px; right: 8px; min-width: 0; }
+  }
   @media (max-width: 700px) {
     .brand, .tool .label { display: none; }
     .output { height: 34%; }

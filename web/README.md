@@ -45,6 +45,18 @@ cd ide && python3 -m http.server 8000
 
 Dann `http://localhost:8000` öffnen.
 
+## Bildschirmgrößen
+
+Die blaue Leiste bleibt immer einzeilig. Je schmaler der Bildschirm, desto mehr fällt weg:
+
+| Breite | Leiste |
+|---|---|
+| über 1180 px | alles, mit Untertitel „Vom Tablet zum Mikrocontroller“ |
+| bis 1180 px (iPad quer, 1024 px) | ohne Untertitel |
+| bis 900 px | Knöpfe nur mit Symbol, ohne Beschriftung |
+| bis 820 px (iPad mini hochkant, 768 px) | nur das Logo, ohne den Namen daneben |
+| bis 480 px (Handy) | ohne die Anzeige „Arduino Nano“, Beispiel-Menü über die ganze Breite |
+
 ## Ablauf beim Kompilieren
 
 1. **Sketch → C++:** vorne `#include <Arduino.h>`, vor der ersten Funktion Prototypen aller
