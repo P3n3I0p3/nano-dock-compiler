@@ -34,7 +34,7 @@ done
 
 tar --format=ustar -C $S -cf - . | gzip -9 > $OUT/sysroot.tar.gz
 gzip -9 -c dist/llvm.wasm > $OUT/llvm.wasm.gz
-cp web/index.html web/nanodock-compiler.js web/compiler-worker.js web/compiler-core.js web/wasi.js $OUT/
+cp web/index.html web/nanodock-compiler.js web/compiler-worker.js web/compiler-core.js web/wasi.js web/inflate.js $OUT/
 cp -r web/bit $OUT/bit
 cp web/manifest-*.webmanifest $OUT/
 # Beispiel-Menü: Workshop-Sketches (Reihenfolge aus reihenfolge.txt) und je ein Beispiel pro Bibliothek

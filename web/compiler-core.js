@@ -3,6 +3,7 @@
 // Läuft im Web Worker (compiler-worker.js) und unter Node.js (test-node.mjs).
 
 import { WASI, makeDir, writeFile, readFile, mkdirp, lookup } from "./wasi.js";
+import { gunzipSync } from "./inflate.js";
 
 // Speicher des Arduino Nano (ATmega328P mit Bootloader)
 export const FLASH_MAX = 30720;
@@ -51,6 +52,8 @@ export function loadTar(root, buf) {
 export async function gunzip(bytes) {
   // Manche Webserver entpacken .gz-Dateien schon beim Ausliefern; dann ist nichts mehr zu tun
   if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes;
+  // Safari vor 16.4 (z. B. iPad mini 4, iPadOS 15) kennt DecompressionStream nicht: in JavaScript entpacken
+  if (typeof DecompressionStream === "undefined") return gunzipSync(bytes);
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }

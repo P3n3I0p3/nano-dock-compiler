@@ -8,6 +8,7 @@ import { readFileSync, readdirSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Compiler, gunzip } from "./compiler-core.js";
+import { gunzipSync } from "./inflate.js";
 
 const [ideDir, sketchDir, hexDir] = process.argv.slice(2);
 const report = [];
@@ -21,6 +22,13 @@ let t = Date.now();
 const wasm = await gunzip(readFileSync(join(ideDir, "llvm.wasm.gz")));
 const sysroot = await gunzip(readFileSync(join(ideDir, "sysroot.tar.gz")));
 const module = await WebAssembly.compile(wasm);
+// Entpacker in JavaScript (für Safari vor 16.4) muss dasselbe liefern wie DecompressionStream
+{
+  const t0 = Date.now();
+  const js = gunzipSync(new Uint8Array(readFileSync(join(ideDir, "llvm.wasm.gz"))));
+  const same = js.length === wasm.length && js.every((b, i) => b === wasm[i]);
+  check("Entpacken ohne DecompressionStream", same, `${js.length} Bytes, ${Date.now() - t0} ms`);
+}
 const compiler = new Compiler(module, sysroot);
 check("Laden", true, `${compiler.files} Dateien im Sysroot, ${Date.now() - t} ms`);
 

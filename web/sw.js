@@ -8,11 +8,23 @@ const PREFIX = "nanodock-ide-";
 const CACHE = PREFIX + VERSION;
 
 self.addEventListener("install", (event) => {
-  // cache: "reload" holt jede Datei frisch vom Server, nicht aus dem HTTP-Zwischenspeicher des
-  // Browsers (GitHub Pages erlaubt 10 Minuten Zwischenspeichern, sonst käme die alte Version).
-  event.waitUntil(caches.open(CACHE)
-    .then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))))
-    .then(() => self.skipWaiting()));
+  // Jede Datei wird mit ?v=<Version> geholt und ohne den Zusatz gespeichert. Die neue Adresse
+  // umgeht alle Zwischenspeicher: den des Browsers und das CDN von GitHub Pages. Das CDN liefert
+  // nach einer Veröffentlichung sonst bis zu 10 Minuten lang alte Dateien neben neuen aus, und im
+  // Speicher landete eine gemischte Version (z. B. neue Seite mit alten Arduino-Dateien ohne
+  // Bibliotheken). Schlägt eine Datei fehl, wird nichts gespeichert und die alte Version bleibt.
+  event.waitUntil((async () => {
+    const files = await Promise.all(FILES.map(async (f) => {
+      const url = new URL(f, self.location.href);
+      url.searchParams.set("v", VERSION);
+      const res = await fetch(url, { cache: "reload" });
+      if (!res.ok) throw new Error(`${f}: ${res.status}`);
+      return [f, res];
+    }));
+    const c = await caches.open(CACHE);
+    await Promise.all(files.map(([f, res]) => c.put(new Request(new URL(f, self.location.href)), res)));
+    await self.skipWaiting();
+  })().catch(async (err) => { await caches.delete(CACHE); throw err; }));
 });
 
 self.addEventListener("activate", (event) => {

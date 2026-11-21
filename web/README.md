@@ -12,6 +12,7 @@ Jetson, kein Internet nach dem ersten Laden.
 | `nanodock-compiler.js` | Schnittstelle für die Seite: `compile(code)` gibt `{ ok, hex, log }` zurück, wie der Compiler-Server |
 | `compiler-worker.js` | Web Worker: lädt Compiler und Arduino-Dateien einmal, kompiliert dann im Hintergrund |
 | `compiler-core.js` | die eigentlichen Schritte: Sketch → C++, clang, ld.lld, llvm-objcopy, llvm-size |
+| `inflate.js` | entpackt gzip in JavaScript, nur für Browser ohne `DecompressionStream` (Safari vor 16.4, z. B. iPad mini 4) |
 | `wasi.js` | kleine WASI-Laufzeit mit Dateisystem im Arbeitsspeicher, damit llvm.wasm im Browser läuft |
 | `test-node.mjs` | Test unter Node.js in GitHub Actions |
 | `package.sh` | baut den fertigen Ordner `ide/` |
@@ -34,7 +35,7 @@ Entsteht in GitHub Actions (Download „nano-dock-ide“ beim Lauf, bei Tags `v*
 
 Der Ordner läuft auf **jedem einfachen Webserver** (Jetson, Raspberry Pi, Webhosting, später ESP32
 mit SD-Karte). Die Dateien werden gepackt ausgeliefert und im Browser entpackt
-(`DecompressionStream`, ab Safari 16.4 und Chrome 80).
+(`DecompressionStream`, ab Safari 16.4 und Chrome 80; ältere Browser nehmen `inflate.js`).
 
 Zum Ausprobieren am Rechner:
 
