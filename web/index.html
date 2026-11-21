@@ -389,6 +389,8 @@
 
 <script>
 const HEX_NAME = "SKETCH.HEX";
+// In der iOS-App (nano-dock-app) übernimmt die App das Speichern über den Dialog „Speichern unter“
+const NATIVE = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.nanodock) || null;
 const IDE_NAME = document.title;
 const THEME = document.documentElement.dataset.theme || "bitbruecke";
 const STORE_CODE = THEME + "-ide-code";   // jede IDE merkt sich ihren eigenen Sketch
@@ -846,6 +848,14 @@ function download(file) {
 
 // Teilen-Menü (nur über HTTPS) oder normaler Download
 async function shareOrDownload(file) {
+  if (NATIVE) {
+    try {
+      return await NATIVE.postMessage({ type: "save", name: file.name, text: await file.text() });  // "shared" | "aborted"
+    } catch (err) {
+      logLine("Speichern nicht möglich: " + (err && err.message || err), "error");
+      return "aborted";
+    }
+  }
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file] });
@@ -993,7 +1003,8 @@ compilerReady
 // --- Offline-Modus ---
 // sw.js speichert die ganze IDE im Browser; danach läuft sie ohne Internet.
 // Geht nur über HTTPS (z. B. GitHub Pages, IONOS) oder auf localhost.
-if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+// In der App liegen die Dateien schon auf dem Gerät, dort kein Offline-Speicher.
+if (!NATIVE && "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
   navigator.serviceWorker.addEventListener("message", (e) => {
     if (e.data && e.data.type === "offline-ready") {
       logLine(e.data.update
